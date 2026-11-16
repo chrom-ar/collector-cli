@@ -289,6 +289,8 @@ make check          # gofmt, tidy, vet, staticcheck, golangci-lint, tests, govul
 make build          # bin/collector
 make fixtures-check # the API fixtures match Collector's (../clt)
 make fixtures-sync  # copy them over
+make update         # latest dependencies and tools, then make check
+make release        # tag the next patch version (BUMP=minor|major, or V=1.2.3); CI publishes
 ```
 
 The tests run against a fake Collector built from fixtures that Collector

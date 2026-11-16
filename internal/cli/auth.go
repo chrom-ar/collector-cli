@@ -41,7 +41,7 @@ func newLoginCmd(a *app) *cobra.Command {
 				host = "unknown"
 			}
 			open := a.env.StdoutIsTerminal && !noBrowser
-			grant, err := auth.Login(ctx, anon, fmt.Sprintf("collector-cli %s on %s", a.env.Build.Version, host),
+			grant, err := auth.Login(ctx, anon, "collector-cli on "+host,
 				func(d *api.DeviceCode) { a.showCode(d, s.url, open) }, a.env.Sleep)
 			if err != nil {
 				return err

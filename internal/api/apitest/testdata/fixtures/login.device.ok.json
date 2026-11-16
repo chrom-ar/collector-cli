@@ -3,7 +3,7 @@
     "method": "POST",
     "path": "/api/v1/login/device",
     "body": {
-      "client_name": "collector-cli dev on test-host"
+      "client_name": "collector-cli on test-host"
     }
   },
   "response": {
