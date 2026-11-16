@@ -4,12 +4,8 @@
 It replaces the TypeScript CLI in `../collector-js/packages/cli`.
 
 **`SPEC.md` is the brief**: read it before writing anything. This file is
-the short list of rules to follow while implementing it. The model is
-`../../hullop/trk-cli`. Copy its layout, `Makefile`, `.golangci.yml`,
-`.goreleaser.yaml`, `tools/go.mod` and CI workflows, then change the
-names. Go 1.27.4 is installed.
-
-The repository starts with documents only.
+the short list of rules to follow while implementing it. Go 1.27.4 is
+installed.
 
 ## The product, in one paragraph
 
@@ -55,8 +51,6 @@ AI, with stable exit codes.
   publish yourself.
 
 ### Go
-
-trk-cli's `AGENTS.md`, "Go", applies word for word:
 
 - The standard library first.
 - Tools run through the `tool` directive.
