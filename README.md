@@ -11,8 +11,7 @@ collector issues list
 collector issues show 2C7ZffP787kc --markdown > issue.md
 ```
 
-> **Status:** version 1, not released yet. It replaces the TypeScript
-> `@chrom-ar/collector-cli` (npm), which is deprecated once this is out.
+> It replaces the TypeScript `@chrom-ar/collector-cli` (npm).
 
 ## Install
 
