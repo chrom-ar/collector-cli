@@ -1,0 +1,10 @@
+# A denied or expired login exits 3 and stores nothing.
+fake-collector login.device.ok login.token.denied
+exits 3 collector login
+stderr '^error: the login was denied in the browser$'
+! exists config/collector/tokens.json
+
+fake-collector login.device.ok login.token.pending login.token.expired
+exits 3 collector login
+stderr 'error: the code expired before it was approved; run collector login again'
+! exists config/collector/tokens.json

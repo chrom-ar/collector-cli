@@ -1,0 +1,45 @@
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+# A dry run needs no credentials and sends nothing.
+exits 0 collector upload dist --release web@1.4.2 --dry-run
+stdout '^would upload /assets/index-a1b2c3d4\.js$'
+stdout '^1 map\(s\) for release web@1\.4\.2 to https://app\.clt\.chrom\.ar \(dry run: nothing sent\)$'
+
+# No credential at all: a usage mistake.
+exits 2 collector upload dist --release web@1.4.2
+stderr 'missing COLLECTOR_UPLOAD_TOKEN'
+
+exits 2 collector upload dist
+stderr 'missing --release'
+exits 2 collector upload
+stderr 'missing the directory to upload'
+
+# With a personal token, the project goes in X-Collector-Project.
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+fake-collector sourcemaps.upload.ok
+exits 0 collector upload dist --release web@1.4.2
+stdout '^Uploaded 1 map\(s\) for release web@1\.4\.2\.$'
+exists dist/assets/index-a1b2c3d4.js.map
+
+# A read-only token exits 1 here, not 3: upload uses only 0, 1 and 2.
+fake-collector sourcemaps.upload.read_only
+exits 1 collector upload dist --release web@1.4.2
+! stderr cltp_test
+
+# --delete removes the maps after a successful upload.
+fake-collector sourcemaps.upload.ok
+exits 0 collector upload dist --release web@1.4.2 --delete
+stdout 'Deleted the \.map files\.'
+! exists dist/assets/index-a1b2c3d4.js.map
+! grep sourceMappingURL dist/assets/index-a1b2c3d4.js
+
+# No maps: exit 1 with how to turn them on.
+exits 1 collector upload dist --release web@1.4.2
+stderr 'no source maps found in dist'
+
+-- dist/assets/index-a1b2c3d4.js --
+console.log("hi");
+//# sourceMappingURL=index-a1b2c3d4.js.map
+-- dist/assets/index-a1b2c3d4.js.map --
+{"version":3,"file":"index-a1b2c3d4.js","sources":["../src/main.ts"],"sourcesContent":["console.log(\"hi\")"],"names":[],"mappings":"AAAA"}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/invitations",
+    "body": {
+      "email": "not an email",
+      "role": "member"
+    }
+  },
+  "response": {
+    "status": 422,
+    "body": {
+      "error": {
+        "code": "invalid",
+        "fields": {
+          "email": [
+            "must have the @ sign and no spaces"
+          ]
+        },
+        "message": "Some values aren't valid."
+      }
+    }
+  }
+}

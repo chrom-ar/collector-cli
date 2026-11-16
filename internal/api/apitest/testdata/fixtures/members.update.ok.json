@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/members/UsrBob8Mn3Yq",
+    "body": {
+      "role": "admin"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "email": "bob@example.com",
+      "id": "UsrBob8Mn3Yq",
+      "last_name": "Smith",
+      "name": "Bob",
+      "role": "admin"
+    }
+  }
+}

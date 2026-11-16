@@ -1,0 +1,21 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+
+fake-collector orgs.list.ok orgs.update.ok orgs.update.forbidden orgs.update.invalid
+exits 0 collector orgs list
+stdout '^SLUG    NAME    ROLE   CREATED$'
+stdout '^acme    Acme    owner  5m ago$'
+stdout '^globex  Globex  admin  5m ago$'
+
+exits 0 collector orgs edit acme --name 'Acme Labs'
+stdout '^Acme Labs \(acme\)$'
+stdout '^Your role: owner$'
+! stderr 'stops working'
+
+exits 1 collector orgs edit globex --name 'Globex Inc'
+stderr '^ask an owner or admin of globex$'
+
+exits 1 collector orgs edit acme --name ''
+stderr '^  name: can''t be blank$'
+
+exits 2 collector orgs edit acme
+stderr 'say what to change: --name or --slug'

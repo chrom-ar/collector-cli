@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/invitations",
+    "body": {
+      "email": "new@example.com",
+      "role": "member"
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "created_at": "2026-11-13T12:00:00Z",
+      "email": "new@example.com",
+      "expires_at": "2026-11-20T12:00:00Z",
+      "id": "Nvt7Kq2XpAb2",
+      "invited_by": {
+        "id": "UsrAda7Kq2Xp",
+        "last_name": "Lovelace",
+        "name": "Ada"
+      },
+      "role": "member"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/orgs/acme/projects/shop/logs",
+    "headers": {
+      "Accept": "text/markdown"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/markdown; charset=utf-8"
+    },
+    "body": "### 2026-11-13 (UTC)\n\n- `12:00:00.000` info Checkout started\n- `12:00:00.000` request POST /checkout 500 · 42 ms\n- `12:00:00.000` error ** (RuntimeError) boom\n- `12:00:00.000` sign-in failure ada@example.com\n"
+  }
+}

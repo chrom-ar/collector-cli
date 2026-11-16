@@ -1,0 +1,19 @@
+# No token in any output, even with --verbose, success or failure.
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+fake-collector me.ok project.get.ok me.unauthorized
+exits 0 collector whoami -v
+! stdout cltp_test_token_laptop
+! stderr cltp_test_token_laptop
+stderr 'level=DEBUG msg=request method=GET path=/api/v1/me status=200'
+
+exits 0 collector projects show -v --json
+! stdout cltp_test_token_laptop
+! stderr cltp_test_token_laptop
+
+env COLLECTOR_DEBUG=1
+exits 1 collector upload-tokens list
+! stdout cltp_test_token_laptop
+! stderr cltp_test_token_laptop
+stderr 'level=DEBUG'

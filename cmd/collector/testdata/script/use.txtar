@@ -1,0 +1,32 @@
+# collector use: a default organization and project for this Collector.
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+fake-collector project.get.ok orgs.get.ok me.ok issues.list.empty
+
+exits 0 collector use
+stdout '^No default on http://127\.0\.0\.1:\d+\.$'
+stderr 'collector use <org>\[/<project>\]'
+
+# It's checked against Collector, then stored.
+exits 0 collector use acme/shop
+stdout '^Commands on http://127\.0\.0\.1:\d+ now use acme/shop\.$'
+grep '"project": "shop"' config/collector/config.json
+
+exits 0 collector use
+stdout '^acme/shop$'
+
+# Two organizations, yet nothing to say: the default answers.
+exits 0 collector issues list nothing matches this
+stdout 'No unresolved issues'
+
+exits 0 collector whoami
+stdout '^Default: acme/shop$'
+
+exits 0 collector use acme
+stdout 'now use acme\.$'
+
+exits 2 collector use acme/shop/x
+stderr 'expected <org> or <org>/<project>'
+
+exits 0 collector use --clear
+stdout '^No default on'
+! grep acme config/collector/config.json

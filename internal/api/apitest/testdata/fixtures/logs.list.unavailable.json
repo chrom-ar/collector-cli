@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/orgs/acme/projects/shop/logs"
+  },
+  "response": {
+    "status": 503,
+    "body": {
+      "error": {
+        "code": "unavailable",
+        "message": "Logs can't be read right now. Try again in a moment."
+      }
+    }
+  }
+}

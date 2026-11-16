@@ -1,0 +1,78 @@
+# Releases (run by .github/workflows/release.yml when a v* tag is pushed).
+# Check locally with: make release-check (and make release-snapshot).
+version: 2
+
+project_name: collector
+
+before:
+  hooks:
+    - go mod tidy -diff
+
+builds:
+  - id: collector
+    main: ./cmd/collector
+    binary: collector
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: collector
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # Stable names, so releases/latest/download/<name> always works.
+    name_template: "collector_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+nfpms:
+  - id: collector
+    package_name: collector
+    vendor: Chroma
+    homepage: https://github.com/chrom-ar/collector-cli
+    maintainer: Chroma <admin@chrom.ar>
+    description: "Manage Collector from the terminal: issues, logs, projects and source maps."
+    license: MIT
+    formats: [deb, rpm, apk]
+    file_name_template: "collector_{{ .Os }}_{{ .Arch }}{{ .ConventionalExtension }}"
+    bindir: /usr/bin
+
+homebrew_casks:
+  - name: collector
+    repository:
+      owner: chrom-ar
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/chrom-ar/collector-cli
+    description: "Manage Collector from the terminal: issues, logs, projects and source maps"
+    commit_author:
+      name: chroma-bot
+      email: admin@chrom.ar
+    hooks:
+      post:
+        # Release binaries are not notarized; let macOS run them.
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/collector"]
+          end
+
+changelog:
+  # Release notes come from CHANGELOG.md, written for the people who use collector.
+  disable: true
+
+release:
+  github:
+    owner: chrom-ar
+    name: collector-cli

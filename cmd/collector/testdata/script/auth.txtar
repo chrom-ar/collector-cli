@@ -1,0 +1,34 @@
+# COLLECTOR_TOKEN wins, and whoami says so.
+fake-collector me.narrowed
+env COLLECTOR_TOKEN=cltp_test_token_narrowed
+exits 0 collector whoami
+stdout '^Token "ci" from COLLECTOR_TOKEN: write access, only acme$'
+
+# logout with COLLECTOR_TOKEN set is a usage error, and calls nothing.
+exits 2 collector logout
+stderr 'COLLECTOR_TOKEN is set'
+
+# A rejected token exits 3 with Collector's message and the login hint.
+fake-collector me.unauthorized
+env COLLECTOR_TOKEN=cltp_test_revoked
+exits 3 collector whoami
+stderr '^error: Esta credencial no existe o fue revocada'
+stderr '^run: collector login$'
+! stderr cltp_test_revoked
+
+# Under --json, the error is one JSON object on stderr.
+exits 3 collector whoami --json
+stderr '^\{"error":\{"code":"unauthorized","message":"Esta credencial'
+! stdout .
+
+# --lang must be en or es.
+exits 2 collector whoami --lang fr
+stderr 'unknown language "fr": use en or es'
+
+# A flag the command doesn't take is a usage error.
+exits 2 collector whoami --markdown
+stderr 'unknown flag: --markdown'
+
+# A bad --url is a usage error.
+exits 2 collector whoami --url ftp://x
+stderr 'invalid Collector URL'

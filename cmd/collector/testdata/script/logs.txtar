@@ -1,0 +1,43 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+# Oldest at the top; one server, so no server column; request ids whole.
+fake-collector logs.list.ok logs.list.filtered logs.list.markdown
+exits 0 collector logs --limit 3
+cmp stdout page.txt
+stderr '^Older: --cursor cursor_test_logs$'
+
+exits 0 collector logs --env production --request req-0001 --level error --type log,request
+stdout '^12:00:00\.000 error \*\* \(RuntimeError\) boom req-0001$'
+
+exits 0 collector logs --markdown
+stdout '^- `12:00:00\.000` error \*\* \(RuntimeError\) boom$'
+
+exits 0 collector logs --limit 3 --json
+stdout '"next_cursor": "cursor_test_logs"'
+
+# Collector without logs, or logs down for now: exit 1 with its message.
+fake-collector logs.list.no_clickhouse
+exits 1 collector logs
+stderr '^error: this Collector doesn''t keep logs, or the project doesn''t exist'
+fake-collector logs.list.unavailable
+exits 1 collector logs
+stderr '^error: Logs can''t be read right now'
+
+# Usage mistakes exit 2 before calling anything.
+exits 2 collector logs --since 99999999999d
+stderr 'too long ago'
+exits 2 collector logs --since 2026-02-30
+stderr 'not a time'
+exits 2 collector logs -f --markdown
+exits 2 collector logs -f --until 5m
+exits 2 collector logs -f --cursor c1
+stderr '--cursor can''t be combined with --follow'
+exits 2 collector logs -f --all
+stderr '--all can''t be combined with --follow'
+
+-- page.txt --
+12:00:00.000 POST /checkout 500 42ms 198.51.100.7 req-0001
+12:00:00.000 error ** (RuntimeError) boom req-0001
+12:00:00.000 sign_in failure ada@example.com password 198.51.100.7

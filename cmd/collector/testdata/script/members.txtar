@@ -1,0 +1,16 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+fake-collector members.list.ok
+exits 0 collector members list --org acme
+stdout '^EMAIL            NAME          ROLE$'
+stdout '^bob@example\.com  Bob Smith     member$'
+
+# collector api: the raw JSON, as is.
+fake-collector me.ok
+exits 0 collector api /me
+stdout '"email": "ada@example.com"'
+exits 0 collector api api/v1/me
+stdout '"organizations"'
+exits 2 collector api /me -X TRACE
+stderr 'unknown method'
+exits 2 collector api '/me?x=1'
+stderr 'with -f key=value'

@@ -1,0 +1,45 @@
+# collector login: the device flow. The code and URL go to stderr, the
+# device code never shows, and the token is stored (in a file here: tests
+# have no keychain).
+fake-collector login.device.ok login.token.pending login.token.slow_down login.token.ok me.ok me.token.delete.ok
+exits 0 collector login
+stdout '^Signed in to http://127\.0\.0\.1:\d+ as ada@example.com \(token "laptop", write access\)\.$'
+stderr '^First copy your one-time code: WDJB-MJHT$'
+stderr '^You''re in 2 organizations\. Pick one: collector use <org>\[/<project>\]$'
+stderr '^Then open http://127\.0\.0\.1:\d+/login/device and enter it\.$'
+stderr 'No keychain found: the token is kept in .*tokens\.json, readable only by you\.'
+! stderr dc_test_device_code
+! stdout cltp_
+! stderr cltp_
+! exists browser.log
+grep cltp_test_token_device config/collector/tokens.json
+grep '"url": "http://127' config/collector/config.json
+
+# Signed in: whoami works without COLLECTOR_URL, from the config.
+env COLLECTOR_URL=
+exits 0 collector whoami
+stdout '^ada@example.com \(Ada Lovelace\) on http://127\.0\.0\.1:\d+$'
+stdout '^Token "laptop": write access$'
+stdout '^ORGANIZATION  NAME    ROLE$'
+stdout '^acme          Acme    owner$'
+stdout '^globex        Globex  admin$'
+! stderr .
+
+# --json prints /me as is.
+exits 0 collector whoami --json
+stdout '"organizations": \['
+stdout '"access": "write"'
+
+# logout revokes the token and forgets it.
+exits 0 collector logout
+stdout '^Signed out of http://127\.0\.0\.1:\d+\.$'
+! grep cltp_test_token_device config/collector/tokens.json
+
+exits 0 collector logout
+stdout '^Not signed in to http://127\.0\.0\.1:\d+\.$'
+
+exits 3 collector whoami
+stderr '^error: not signed in to http://127\.0\.0\.1:\d+\.$'
+stderr '^run: collector login \(or set COLLECTOR_TOKEN\)$'
+! stdout .
+

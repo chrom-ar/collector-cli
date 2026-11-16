@@ -1,0 +1,58 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/orgs/acme/projects/shop/logs",
+    "query": {
+      "limit": "3"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "account": "ada@example.com",
+          "at": "2026-11-13T12:00:00Z",
+          "environment": "production",
+          "id": "rec-sign-in-0001",
+          "ip": "198.51.100.7",
+          "kind": "sign_in",
+          "outcome": "failure",
+          "reason": "bad_password",
+          "release": "web@1.4.2",
+          "server": "web-1",
+          "sign_in_method": "password"
+        },
+        {
+          "at": "2026-11-13T12:00:00Z",
+          "environment": "production",
+          "id": "rec-log-0001",
+          "kind": "log",
+          "level": "error",
+          "message": "** (RuntimeError) boom",
+          "release": "web@1.4.2",
+          "request_id": "req-0001",
+          "server": "web-1"
+        },
+        {
+          "at": "2026-11-13T12:00:00Z",
+          "bytes": 512,
+          "duration_ms": 42,
+          "environment": "production",
+          "id": "rec-request-0001",
+          "ip": "198.51.100.7",
+          "kind": "request",
+          "method": "POST",
+          "path": "/checkout",
+          "release": "web@1.4.2",
+          "request_id": "req-0001",
+          "route": "/checkout",
+          "server": "web-1",
+          "status": 500,
+          "user_agent": "Mozilla/5.0"
+        }
+      ],
+      "next_cursor": "cursor_test_logs"
+    }
+  }
+}

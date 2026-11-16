@@ -1,0 +1,46 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+
+# An email is resolved to the member's id through the list.
+fake-collector members.list.ok members.update.ok members.update.forbidden members.remove.ok members.leave.ok invitations.create.ok invitations.create.invalid
+exits 0 collector members role bob@example.com admin
+stdout '^bob@example\.com is now admin in acme\.$'
+
+exits 1 collector members role ada@example.com member
+stderr '^error: Your role here doesn''t allow it\.$'
+
+exits 2 collector members role bob@example.com boss
+stderr 'unknown role "boss"'
+
+exits 1 collector members role nobody@example.com admin
+stderr 'nobody@example\.com isn''t a member of acme'
+
+# Destructive: refused without a terminal to ask at, unless --yes.
+exits 2 collector members remove bob@example.com
+stderr 'pass --yes'
+exits 0 collector members remove bob@example.com --yes
+stdout '^Removed bob@example\.com from acme\.$'
+
+exits 2 collector members leave
+stderr 'pass --yes'
+exits 0 collector members leave acme -y
+stdout '^You left acme\.$'
+
+# Several invitations: one line each; a bad one is reported, the rest go.
+exits 1 collector members invite new@example.com 'not an email'
+stdout '^Invited new@example\.com to acme as member \(Nvt7Kq2XpAb2\)\.$'
+stderr '^error: not an email: Some values aren''t valid\.$'
+stderr '^  email: must have the @ sign and no spaces$'
+
+fake-collector members.leave.last_owner
+exits 1 collector members leave acme --yes
+stderr '^error: An organization needs at least one owner\.$'
+
+fake-collector invitations.list.ok invitations.resend.ok invitations.revoke.ok
+exits 0 collector invitations list
+stdout '^ID            EMAIL            ROLE    INVITED BY    EXPIRES$'
+stdout '^Nvt7Kq2XpAb2  new@example\.com  member  Ada Lovelace  2026-11-20 12:00$'
+exits 0 collector invitations resend Nvt7Kq2XpAb2
+stdout '^Sent again to new@example\.com; it expires 2026-11-20 12:00\.$'
+exits 0 collector invitations revoke Nvt7Kq2XpAb2
+stdout '^Revoked\.$'

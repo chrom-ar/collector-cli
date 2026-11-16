@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/api/v1/orgs/acme/members/me"
+  },
+  "response": {
+    "status": 422,
+    "body": {
+      "error": {
+        "code": "invalid",
+        "message": "An organization needs at least one owner."
+      }
+    }
+  }
+}

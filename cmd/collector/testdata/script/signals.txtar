@@ -1,0 +1,23 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+# One row per environment and source.
+fake-collector signals.list.ok
+exits 0 collector signals
+stdout '^ENVIRONMENT  SOURCE   STATUS  LAST SEEN  SDK                        RELEASE    SERVER  RUNTIME$'
+stdout '^prod         server   active  5m ago     collector 0\.1\.0            v57$'
+stdout '^production   server   active  5m ago     collector 0\.5\.4            v57        web-1   elixir 1\.19\.4, otp 28$'
+stdout '^production   browser  active  5m ago     @chrom-ar/collector 0\.3\.1  web@1\.4\.2$'
+
+# The project as an argument.
+env COLLECTOR_PROJECT=
+exits 0 collector signals shop
+stdout '^production   browser'
+
+exits 0 collector signals shop --json
+stdout '"heartbeat_at": null'
+stdout '"next_cursor": null'
+
+exits 2 collector signals shop other
+stderr 'unexpected arguments: other'
