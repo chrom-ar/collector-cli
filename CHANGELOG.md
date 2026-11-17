@@ -2,6 +2,12 @@
 
 What changed in each release of `collector`, for the people who use it.
 
+## Unreleased
+
+- The new-version notice says how to upgrade the way collector was
+  installed: Homebrew, apt, dnf, zypper, `go install` or the install
+  script.
+
 ## 0.1.1
 
 - `login` names the token "collector-cli on <host>", without the

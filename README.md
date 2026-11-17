@@ -24,6 +24,9 @@ go install github.com/chrom-ar/collector-cli/cmd/collector@latest
 The installer checks the download against the release's checksums and
 puts `collector` in `/usr/local/bin` when it can, else `~/.local/bin`
 (`COLLECTOR_INSTALL_DIR` picks another). Run it again to upgrade.
+At a terminal, `collector` says when a new version is out, at most once a
+day, with the command to upgrade (`COLLECTOR_NO_UPDATE_NOTIFIER=1` turns
+it off).
 
 On Debian, Ubuntu and derivatives, add Chroma's apt repository once, and
 `sudo apt upgrade` brings each new release:

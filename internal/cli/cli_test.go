@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -133,4 +136,31 @@ func TestEveryCommandHasAnExample(t *testing.T) {
 		}
 	}
 	walk(root)
+}
+
+func TestUpdateNoticeNamesTheUpgrade(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"tag_name":"v0.2.0"}`)
+	}))
+	t.Cleanup(srv.Close)
+	var stdout, stderr bytes.Buffer
+	env := Env{
+		Stdout:           &stdout,
+		Stderr:           &stderr,
+		Getenv:           func(string) string { return "" },
+		Build:            Build{Version: "0.1.0"},
+		HTTPClient:       srv.Client(),
+		StdoutIsTerminal: true,
+		StderrIsTerminal: true,
+		CacheDir:         t.TempDir(),
+		UpdateURL:        srv.URL,
+		Executable:       "/opt/homebrew/Caskroom/collector/0.1.0/collector",
+	}
+	if code := Run(context.Background(), []string{"--help"}, env); code != ExitOK {
+		t.Fatalf("exit code = %d; stderr: %s", code, stderr.String())
+	}
+	want := "\nA new version of collector is available: 0.2.0 (you have 0.1.0).\nUpdate with: brew upgrade collector\n"
+	if stderr.String() != want {
+		t.Errorf("stderr = %q, want %q", stderr.String(), want)
+	}
 }

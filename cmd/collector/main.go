@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/chrom-ar/collector-cli/internal/auth"
@@ -76,5 +77,18 @@ func run(args []string, d deps) int {
 		StdoutIsTerminal: term.IsTerminal(int(os.Stdout.Fd())), //nolint:gosec // Fd fits in an int.
 		StderrIsTerminal: term.IsTerminal(int(os.Stderr.Fd())), //nolint:gosec // Fd fits in an int.
 		CacheDir:         cacheDir,
+		Executable:       executable(),
 	})
+}
+
+// executable is collector's own path with symlinks resolved, or "".
+func executable() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		return resolved
+	}
+	return exe
 }

@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -50,6 +52,9 @@ type Env struct {
 
 	CacheDir  string // The platform's user cache directory; "" disables the update notice.
 	UpdateURL string // Where to ask for the latest release; "" is update.LatestURL.
+	// Executable is collector's own path, symlinks resolved ("" if unknown):
+	// the update notice tells how to upgrade from how it was installed.
+	Executable string
 }
 
 // Run executes the command line args (without the program name) and
@@ -257,6 +262,17 @@ func (a *app) updateNotice(ctx context.Context) {
 		Now:       a.env.Now,
 	}
 	if n := u.Notice(ctx); n != "" {
-		fmt.Fprintf(a.env.Stderr, "\n%s\nUpdate with: brew upgrade collector, or see https://github.com/chrom-ar/collector-cli/releases\n", n)
+		hint := update.UpgradeHint(update.Install{
+			Exe:    a.env.Executable,
+			GOOS:   runtime.GOOS,
+			Home:   a.env.Getenv("HOME"),
+			GOPATH: a.env.Getenv("GOPATH"),
+			GOBIN:  a.env.Getenv("GOBIN"),
+			Has: func(p string) bool {
+				_, err := os.Stat(p)
+				return err == nil
+			},
+		})
+		fmt.Fprintf(a.env.Stderr, "\n%s\nUpdate with: %s\n", n, hint)
 	}
 }
