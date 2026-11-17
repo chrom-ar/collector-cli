@@ -1,0 +1,43 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/r-Rgx7Kq2XpAb2",
+    "body": {
+      "token": "threat_check_token_test"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "default": false,
+      "enabled": true,
+      "name": "Two or more failed sign-ins for one account in 5 minutes",
+      "paused": false,
+      "ref": "r-Rgx7Kq2XpAb2",
+      "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 5 or more.",
+      "severity": "high",
+      "spec": {
+        "group_by": [
+          "account"
+        ],
+        "kind": "threshold",
+        "measure": {
+          "fn": "count"
+        },
+        "severity": "high",
+        "source": "sign_ins",
+        "threshold": 5,
+        "version": 1,
+        "where": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "failure"
+          }
+        ],
+        "window": 300
+      },
+      "text": "Two or more failed sign-ins for one account in 5 minutes"
+    }
+  }
+}

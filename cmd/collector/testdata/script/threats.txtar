@@ -1,0 +1,40 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+# Open detections, last seen first, with a More: line for the next page.
+fake-collector detections.list.ok
+exits 0 collector threats list --limit 1
+stdout '^ID            SEVERITY  STATUS  RULE                 SUBJECT           FIRED  LAST SEEN$'
+stdout '^Det8Mn3YqBc3  medium    open    Probing known paths  ip: 203\.0\.113\.10  1      5m ago$'
+stderr '^More: --cursor cursor_test_detections$'
+
+exits 0 collector threats list --limit 1 --json
+stdout '"next_cursor": "cursor_test_detections"'
+
+fake-collector detections.list.empty
+exits 0 collector threats list
+stdout '^No open threats\.$'
+
+# One detection.
+fake-collector detection.get.ok detection.get.not_found
+exits 0 collector threats show Det7Kq2XpAb2
+stdout '^Probing known paths: ip: 203\.0\.113\.9$'
+stdout '^open · medium · fired 1 time · last measure 4$'
+stdout '^First seen 5m ago · last seen 5m ago$'
+stdout '^Evidence:$'
+stdout '^  request rec-request-0001, 5m ago$'
+stdout '/o/acme/p/shop/threats/Det7Kq2XpAb2$'
+exits 0 collector threats show Det7Kq2XpAb2 --json
+stdout '"rule_key": "d:probing"'
+exits 1 collector threats show Nope7Kq2XpAb
+stderr 'doesn''t exist'
+
+# Resolving is the only change.
+fake-collector detection.resolve.ok
+exits 0 collector threats resolve Det7Kq2XpAb2
+stdout '^Det7Kq2XpAb2 resolved$'
+
+exits 2 collector threats show
+exits 2 collector threats
+stderr 'threats needs an action: list, resolve, show'

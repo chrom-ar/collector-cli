@@ -1,0 +1,43 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/d-account-brute-force",
+    "body": {
+      "threshold": 30
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "default": true,
+      "enabled": true,
+      "name": "Brute force on one account",
+      "paused": false,
+      "ref": "d-account-brute-force",
+      "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 30 or more.",
+      "severity": "high",
+      "spec": {
+        "group_by": [
+          "account"
+        ],
+        "kind": "threshold",
+        "measure": {
+          "fn": "count"
+        },
+        "severity": "high",
+        "source": "sign_ins",
+        "threshold": 30,
+        "version": 1,
+        "where": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "failed"
+          }
+        ],
+        "window": 300
+      },
+      "text": null
+    }
+  }
+}

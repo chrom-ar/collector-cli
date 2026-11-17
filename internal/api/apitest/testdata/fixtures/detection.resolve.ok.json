@@ -1,0 +1,34 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/projects/shop/detections/Det7Kq2XpAb2",
+    "body": {
+      "status": "resolved"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "evidence": [
+        {
+          "at": "2026-11-13T12:00:00Z",
+          "id": "rec-request-0001",
+          "kind": "request"
+        }
+      ],
+      "fired_count": 1,
+      "first_seen_at": "2026-11-13T12:00:00Z",
+      "id": "Det7Kq2XpAb2",
+      "last_measure": 4,
+      "last_seen_at": "2026-11-13T12:00:00Z",
+      "rule_key": "d:probing",
+      "rule_name": "Probing known paths",
+      "severity": "medium",
+      "status": "resolved",
+      "subject": {
+        "ip": "203.0.113.9"
+      },
+      "url": "http://clt.test/o/acme/p/shop/threats/Det7Kq2XpAb2"
+    }
+  }
+}

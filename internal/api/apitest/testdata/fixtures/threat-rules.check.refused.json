@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/check",
+    "body": {
+      "text": "A sign-in from a new country, then a password change"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "reason": "Sequences of events aren't supported yet.",
+      "status": "refused"
+    }
+  }
+}

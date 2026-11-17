@@ -1,0 +1,52 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/check",
+    "body": {
+      "text": "Two or more failed sign-ins for one account in 5 minutes"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "model": "claude-sonnet-5-5",
+      "preview": {
+        "count": 2,
+        "examples": [
+          {
+            "measure": 3,
+            "subject": "ada@example.com"
+          },
+          {
+            "measure": 2,
+            "subject": "bob@example.com"
+          }
+        ]
+      },
+      "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more.",
+      "spec": {
+        "group_by": [
+          "account"
+        ],
+        "kind": "threshold",
+        "measure": {
+          "fn": "count"
+        },
+        "severity": "high",
+        "source": "sign_ins",
+        "threshold": 2,
+        "version": 1,
+        "where": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "failure"
+          }
+        ],
+        "window": 300
+      },
+      "status": "ok",
+      "token": "threat_check_token_test"
+    }
+  }
+}

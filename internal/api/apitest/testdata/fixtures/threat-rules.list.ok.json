@@ -1,0 +1,208 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "default": true,
+          "enabled": true,
+          "name": "Brute force on one account",
+          "paused": false,
+          "ref": "d-account-brute-force",
+          "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 10 or more.",
+          "severity": "high",
+          "spec": {
+            "group_by": [
+              "account"
+            ],
+            "kind": "threshold",
+            "measure": {
+              "fn": "count"
+            },
+            "severity": "high",
+            "source": "sign_ins",
+            "threshold": 10,
+            "version": 1,
+            "where": [
+              {
+                "field": "outcome",
+                "op": "eq",
+                "value": "failed"
+              }
+            ],
+            "window": 300
+          },
+          "text": null
+        },
+        {
+          "default": true,
+          "enabled": true,
+          "name": "One IP trying many accounts",
+          "paused": false,
+          "ref": "d-ip-many-accounts",
+          "sentence": "Sign-ins where outcome is failed: different accounts per IP over 10 minutes, a detection at 5 or more.",
+          "severity": "high",
+          "spec": {
+            "group_by": [
+              "ip"
+            ],
+            "kind": "threshold",
+            "measure": {
+              "field": "account",
+              "fn": "count_distinct"
+            },
+            "severity": "high",
+            "source": "sign_ins",
+            "threshold": 5,
+            "version": 1,
+            "where": [
+              {
+                "field": "outcome",
+                "op": "eq",
+                "value": "failed"
+              }
+            ],
+            "window": 600
+          },
+          "text": null
+        },
+        {
+          "default": true,
+          "enabled": true,
+          "name": "Scanning",
+          "paused": false,
+          "ref": "d-scanning",
+          "sentence": "Requests where status is 404: different paths per IP over 1 minute, a detection at 30 or more.",
+          "severity": "medium",
+          "spec": {
+            "group_by": [
+              "ip"
+            ],
+            "kind": "threshold",
+            "measure": {
+              "field": "path",
+              "fn": "count_distinct"
+            },
+            "severity": "medium",
+            "source": "requests",
+            "threshold": 30,
+            "version": 1,
+            "where": [
+              {
+                "field": "status",
+                "op": "eq",
+                "value": 404
+              }
+            ],
+            "window": 60
+          },
+          "text": null
+        },
+        {
+          "default": true,
+          "enabled": true,
+          "name": "Probing known paths",
+          "paused": false,
+          "ref": "d-probing",
+          "sentence": "Requests where path contains any of /.env, /.git/, /wp-admin, /wp-login.php, /phpmyadmin, ../, /etc/passwd, per IP.",
+          "severity": "medium",
+          "spec": {
+            "group_by": [
+              "ip"
+            ],
+            "kind": "match",
+            "severity": "medium",
+            "source": "requests",
+            "version": 1,
+            "where": [
+              {
+                "field": "path",
+                "op": "contains_any",
+                "value": [
+                  "/.env",
+                  "/.git/",
+                  "/wp-admin",
+                  "/wp-login.php",
+                  "/phpmyadmin",
+                  "../",
+                  "/etc/passwd"
+                ]
+              }
+            ]
+          },
+          "text": null
+        },
+        {
+          "default": true,
+          "enabled": true,
+          "name": "Burst of forbidden responses",
+          "paused": false,
+          "ref": "d-forbidden-burst",
+          "sentence": "Requests where status is one of 401, 403, counted per IP over 5 minutes: a detection at 50 or more.",
+          "severity": "medium",
+          "spec": {
+            "group_by": [
+              "ip"
+            ],
+            "kind": "threshold",
+            "measure": {
+              "fn": "count"
+            },
+            "severity": "medium",
+            "source": "requests",
+            "threshold": 50,
+            "version": 1,
+            "where": [
+              {
+                "field": "status",
+                "op": "in",
+                "value": [
+                  401,
+                  403
+                ]
+              }
+            ],
+            "window": 300
+          },
+          "text": null
+        },
+        {
+          "default": false,
+          "enabled": true,
+          "name": "Two or more failed sign-ins for one account in 5 minutes",
+          "paused": false,
+          "ref": "r-Rgx7Kq2XpAb2",
+          "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more.",
+          "severity": "high",
+          "spec": {
+            "group_by": [
+              "account"
+            ],
+            "kind": "threshold",
+            "measure": {
+              "fn": "count"
+            },
+            "severity": "high",
+            "source": "sign_ins",
+            "threshold": 2,
+            "version": 1,
+            "where": [
+              {
+                "field": "outcome",
+                "op": "eq",
+                "value": "failure"
+              }
+            ],
+            "window": 300
+          },
+          "text": "Two or more failed sign-ins for one account in 5 minutes"
+        }
+      ],
+      "next_cursor": null
+    }
+  }
+}

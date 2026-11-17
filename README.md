@@ -175,6 +175,28 @@ the next), or `--all`. `--markdown` gives Collector's text for an AI.
 `--follow` reads the backlog, then streams new records until Ctrl-C. It
 reconnects by itself, filling the gap, if the connection drops.
 
+## Threats
+
+What the threat rules caught (an IP probing for `/.env`, many failed
+sign-ins on one account), and the rules themselves.
+
+```sh
+collector threats list                                 # open ones; --status resolved|all
+collector threats show Det7Kq2XpAb2
+collector threats resolve Det7Kq2XpAb2
+collector threat-rules list                            # defaults first; --json for what each checks
+collector threat-rules add 'More than 20 failed sign-ins for one account in 5 minutes'
+collector threat-rules rewrite r-Rgx7Kq2XpAb2 'More than 50 failed sign-ins in 5 minutes'
+collector threat-rules off d-probing                   # on turns it back on
+collector threat-rules threshold d-account-brute-force 30   # or default
+```
+
+`add` and `rewrite` show what Collector understood, in plain words, and
+what the rule would have caught over the last day, then ask before
+turning it on (`--yes` doesn't ask; `--dry-run` only checks, and with
+`--json` prints the rule as Collector runs it). Writing rules is for
+owners and admins.
+
 ## Speed and signs of life
 
 ```sh

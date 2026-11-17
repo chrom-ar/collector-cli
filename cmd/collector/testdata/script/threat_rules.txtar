@@ -1,0 +1,90 @@
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+# Every rule, defaults first.
+fake-collector threat-rules.list.ok
+exits 0 collector threat-rules list
+stdout '^REF                    STATUS  SEVERITY  DEFAULT  NAME$'
+stdout '^d-account-brute-force  on      high      yes      Brute force on one account$'
+stdout '^r-Rgx7Kq2XpAb2         on      high      no       Two or more failed sign-ins for one account in 5 minutes$'
+exits 0 collector threat-rules list --json
+stdout '"fn": "count_distinct"'
+
+# add checks the words first. --dry-run stops there.
+fake-collector threat-rules.check.ok
+exits 0 collector threat-rules add Two or more failed sign-ins for one account in 5 minutes --dry-run
+stdout '^Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more\.$'
+stdout '^Over the last day it would have fired 2 times, as for:$'
+stdout '^  ada@example\.com  3$'
+stdout '^  bob@example\.com  2$'
+stderr 'Nothing turned on \(--dry-run\)\.'
+exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --dry-run --json
+stdout '"kind": "threshold"'
+! stdout 'Over the last day'
+
+# Without a terminal to ask at, it takes --yes.
+exits 2 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes'
+stderr 'pass --yes'
+
+fake-collector threat-rules.check.ok threat-rules.create.ok
+exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stdout '^Sign-ins where outcome is failure'
+stdout '^On: r-Rgx7Kq2XpAb2 Two or more failed sign-ins for one account in 5 minutes$'
+
+# With --json, stdout is the rule; what Collector understood goes to stderr.
+exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes --json
+stdout '"ref": "r-Rgx7Kq2XpAb2"'
+! stdout 'Over the last day'
+stderr 'Over the last day'
+
+fake-collector threat-rules.check.ok_no_preview
+exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --dry-run
+stdout '^No preview: Collector couldn''t read the last day''s logs\.$'
+
+# Refused words, as Collector says why.
+fake-collector threat-rules.check.refused
+exits 1 collector threat-rules add 'A sign-in from a new country, then a password change' --yes
+stderr '^error: collector can''t make a rule of that: Sequences of events aren''t supported yet\.$'
+exits 1 collector threat-rules add 'A sign-in from a new country, then a password change' --yes --json
+stdout '"status": "refused"'
+
+fake-collector threat-rules.check.unavailable
+exits 1 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stderr 'couldn''t be checked right now'
+
+fake-collector threat-rules.check.forbidden
+exits 1 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stderr 'role here doesn''t allow it'
+
+fake-collector threat-rules.check.ok threat-rules.create.limit
+exits 1 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stderr 'At most 25'
+
+fake-collector threat-rules.check.ok threat-rules.create.bad_token
+exits 1 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stderr 'over an hour old'
+
+exits 2 collector threat-rules add
+exits 2 collector threat-rules add '  '
+stderr 'say what to look for'
+
+# rewrite gives an own rule new words.
+fake-collector threat-rules.check.ok threat-rules.rewrite.ok threat-rules.rewrite.default
+exits 0 collector threat-rules rewrite r-Rgx7Kq2XpAb2 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stdout '^On: r-Rgx7Kq2XpAb2 Two or more'
+exits 1 collector threat-rules rewrite d-probing 'Two or more failed sign-ins for one account in 5 minutes' --yes
+stderr 'Default rules can''t be rewritten'
+exits 2 collector threat-rules rewrite r-Rgx7Kq2XpAb2
+
+# Switching off and thresholds.
+fake-collector threat-rules.update.enabled threat-rules.update.not_found threat-rules.update.threshold
+exits 0 collector threat-rules off d-probing
+stdout '^Off: d-probing Probing known paths$'
+exits 1 collector threat-rules off r-Nope7Kq2XpAb
+stderr 'doesn''t exist'
+exits 0 collector threat-rules threshold d-account-brute-force 30
+stdout '^d-account-brute-force: Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 30 or more\.$'
+exits 2 collector threat-rules threshold d-account-brute-force 0
+stderr 'a whole number, 1 or more, or default'
+exits 2 collector threat-rules threshold d-account-brute-force lots

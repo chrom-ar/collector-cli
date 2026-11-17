@@ -1,0 +1,46 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/d-probing",
+    "body": {
+      "enabled": false
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "default": true,
+      "enabled": false,
+      "name": "Probing known paths",
+      "paused": false,
+      "ref": "d-probing",
+      "sentence": "Requests where path contains any of /.env, /.git/, /wp-admin, /wp-login.php, /phpmyadmin, ../, /etc/passwd, per IP.",
+      "severity": "medium",
+      "spec": {
+        "group_by": [
+          "ip"
+        ],
+        "kind": "match",
+        "severity": "medium",
+        "source": "requests",
+        "version": 1,
+        "where": [
+          {
+            "field": "path",
+            "op": "contains_any",
+            "value": [
+              "/.env",
+              "/.git/",
+              "/wp-admin",
+              "/wp-login.php",
+              "/phpmyadmin",
+              "../",
+              "/etc/passwd"
+            ]
+          }
+        ]
+      },
+      "text": null
+    }
+  }
+}

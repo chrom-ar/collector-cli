@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/projects/shop/detections/Det7Kq2XpAb2",
+    "body": {
+      "status": "open"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "invalid",
+        "message": "status can only be set to resolved."
+      }
+    }
+  }
+}

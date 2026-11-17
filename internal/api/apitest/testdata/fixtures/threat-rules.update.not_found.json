@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/r-Nope7Kq2XpAb",
+    "body": {
+      "enabled": false
+    }
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "not_found",
+        "message": "That doesn't exist, or this token can't see it."
+      }
+    }
+  }
+}

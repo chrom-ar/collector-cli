@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/d-probing",
+    "body": {
+      "token": "threat_check_token_test"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "invalid",
+        "message": "Default rules can't be rewritten."
+      }
+    }
+  }
+}
