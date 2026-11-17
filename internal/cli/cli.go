@@ -55,6 +55,7 @@ type Env struct {
 	// Executable is collector's own path, symlinks resolved ("" if unknown):
 	// the update notice tells how to upgrade from how it was installed.
 	Executable string
+	GOOS       string // The operating system; "" is runtime.GOOS.
 }
 
 // Run executes the command line args (without the program name) and
@@ -264,7 +265,7 @@ func (a *app) updateNotice(ctx context.Context) {
 	if n := u.Notice(ctx); n != "" {
 		hint := update.UpgradeHint(update.Install{
 			Exe:    a.env.Executable,
-			GOOS:   runtime.GOOS,
+			GOOS:   cmp.Or(a.env.GOOS, runtime.GOOS),
 			Home:   a.env.Getenv("HOME"),
 			GOPATH: a.env.Getenv("GOPATH"),
 			GOBIN:  a.env.Getenv("GOBIN"),

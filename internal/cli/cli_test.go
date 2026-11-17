@@ -155,6 +155,7 @@ func TestUpdateNoticeNamesTheUpgrade(t *testing.T) {
 		CacheDir:         t.TempDir(),
 		UpdateURL:        srv.URL,
 		Executable:       "/opt/homebrew/Caskroom/collector/0.1.0/collector",
+		GOOS:             "darwin",
 	}
 	if code := Run(context.Background(), []string{"--help"}, env); code != ExitOK {
 		t.Fatalf("exit code = %d; stderr: %s", code, stderr.String())
