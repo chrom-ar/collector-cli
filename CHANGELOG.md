@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.2.0
 
 - `threats` lists, shows and resolves what the threat rules caught.
 - `threat-rules` lists the rules, writes your own in plain words
