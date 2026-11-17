@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.1.2
 
 - The new-version notice says how to upgrade the way collector was
   installed: Homebrew, apt, dnf, zypper, `go install` or the install
