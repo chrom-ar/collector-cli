@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.1.1
 
 - `login` names the token "collector-cli on <host>", without the
   version, which went stale after an upgrade.
