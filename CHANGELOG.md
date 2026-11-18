@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.3.0
 
 - `threat-rules add` and `rewrite` show the suggested name and
   description, the rule restated in one sentence, and the newest records
