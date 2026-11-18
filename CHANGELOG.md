@@ -2,14 +2,22 @@
 
 What changed in each release of `collector`, for the people who use it.
 
+## Unreleased
+
+- `threat-rules add` and `rewrite` show the suggested name and
+  description, the rule restated in one sentence, and the newest records
+  its conditions match.
+- At the prompt, type a change instead of `y` to tell Collector more;
+  without a terminal, `--continue <token>` goes on from an earlier
+  check, and with no words turns that version on.
+- `--name` and `--description` replace the suggested ones.
+
 ## 0.2.0
 
 - `threats` lists, shows and resolves what the threat rules caught.
 - `threat-rules` lists the rules, writes your own in plain words
-  (`add`, `rewrite`: checked and previewed, with the records they match,
-  before they turn on; type a change at the prompt, or `--continue` a
-  check, to tell Collector more; `--name` and `--description` to name
-  them), turns them on and off, and sets a default's threshold.
+  (`add`, `rewrite`, checked and previewed before they turn on), turns
+  them on and off, and sets a default's threshold.
 
 ## 0.1.2
 
