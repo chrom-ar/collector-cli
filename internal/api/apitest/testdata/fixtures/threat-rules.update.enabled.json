@@ -10,7 +10,18 @@
     "status": 200,
     "body": {
       "default": true,
+      "description": "Requests for paths attackers try first, like .env or wp-admin.",
       "enabled": false,
+      "labels": {
+        "en": {
+          "description": "Requests for paths attackers try first, like .env or wp-admin.",
+          "name": "Probing known paths"
+        },
+        "es": {
+          "description": "Solicitudes a rutas que se prueban primero en un ataque, como .env o wp-admin.",
+          "name": "Sondeo de rutas conocidas"
+        }
+      },
       "name": "Probing known paths",
       "paused": false,
       "ref": "d-probing",

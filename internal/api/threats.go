@@ -29,35 +29,58 @@ type Evidence struct {
 // ThreatRule is one of a project's threat rules: a default ("d-…") or
 // one of its own ("r-…").
 type ThreatRule struct {
-	Ref      string          `json:"ref"`
-	Name     string          `json:"name"`
-	Text     *string         `json:"text"`
-	Default  bool            `json:"default"`
-	Enabled  bool            `json:"enabled"`
-	Paused   bool            `json:"paused"`
-	Severity string          `json:"severity"`
-	Sentence string          `json:"sentence"`
-	Spec     json.RawMessage `json:"spec"`
+	Ref         string           `json:"ref"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Labels      map[string]Label `json:"labels"`
+	Text        *string          `json:"text"`
+	Default     bool             `json:"default"`
+	Enabled     bool             `json:"enabled"`
+	Paused      bool             `json:"paused"`
+	Severity    string           `json:"severity"`
+	Sentence    string           `json:"sentence"`
+	Spec        json.RawMessage  `json:"spec"`
+}
+
+// Label is a rule's name and description in one language.
+type Label struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // RuleCheck is POST …/threat-rules/check: what Collector understood of
 // a rule's words ("ok"), or why it can't make a rule of them
-// ("refused"). Token turns exactly that on, for an hour.
+// ("refused"). Text is the whole rule restated, as it stands after every
+// message. Token goes on to another check, and, when ok, turns exactly
+// that on, for an hour.
 type RuleCheck struct {
-	Status   string       `json:"status"`
-	Reason   string       `json:"reason"`
-	Sentence string       `json:"sentence"`
-	Model    string       `json:"model"`
-	Preview  *RulePreview `json:"preview"`
-	Token    string       `json:"token"`
+	Status   string           `json:"status"`
+	Reason   string           `json:"reason"`
+	Text     string           `json:"text"`
+	Sentence string           `json:"sentence"`
+	Labels   map[string]Label `json:"labels"`
+	// Name and Description are the suggested ones in the request's
+	// language; nil when Collector suggests none.
+	Name        *string      `json:"name"`
+	Description *string      `json:"description"`
+	Model       string       `json:"model"`
+	Preview     *RulePreview `json:"preview"`
+	Messages    int          `json:"messages"`
+	Token       string       `json:"token"`
 }
 
 // RulePreview is what a checked rule would have caught over the last
-// day, with up to 5 examples.
+// day, with up to 5 examples, how many records its conditions match and
+// the newest 20 of them.
 type RulePreview struct {
 	Count    int `json:"count"`
 	Examples []struct {
 		Subject string  `json:"subject"`
 		Measure float64 `json:"measure"`
 	} `json:"examples"`
+	Matched *int `json:"matched"`
+	Records []struct {
+		At     string            `json:"at"`
+		Fields map[string]string `json:"fields"`
+	} `json:"records"`
 }

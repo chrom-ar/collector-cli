@@ -10,7 +10,18 @@
     "status": 200,
     "body": {
       "default": true,
+      "description": "Many failed sign-ins for one account: someone may be guessing its password.",
       "enabled": true,
+      "labels": {
+        "en": {
+          "description": "Many failed sign-ins for one account: someone may be guessing its password.",
+          "name": "Brute force on one account"
+        },
+        "es": {
+          "description": "Muchos inicios de sesión fallidos en una cuenta: alguien podría estar adivinando su contraseña.",
+          "name": "Fuerza bruta contra una cuenta"
+        }
+      },
       "name": "Brute force on one account",
       "paused": false,
       "ref": "d-account-brute-force",

@@ -1,0 +1,60 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules/check",
+    "body": {
+      "text": "Make it 30",
+      "token": "threat_check_token_test"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "description": "One IP getting many server errors.",
+      "labels": {
+        "en": {
+          "description": "One IP getting many server errors.",
+          "name": "5xx from one IP"
+        },
+        "es": {
+          "description": "Una IP que recibe muchos errores del servidor.",
+          "name": "5xx desde una IP"
+        }
+      },
+      "messages": 2,
+      "model": "claude-sonnet-5-5",
+      "name": "5xx from one IP",
+      "preview": {
+        "count": 0,
+        "examples": [],
+        "matched": 0,
+        "records": []
+      },
+      "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 30 or more.",
+      "spec": {
+        "group_by": [
+          "account"
+        ],
+        "kind": "threshold",
+        "measure": {
+          "fn": "count"
+        },
+        "severity": "high",
+        "source": "sign_ins",
+        "threshold": 30,
+        "version": 1,
+        "where": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "failed"
+          }
+        ],
+        "window": 300
+      },
+      "status": "ok",
+      "text": "30 or more failed sign-ins for one account in 5 minutes.",
+      "token": "threat_check_token_test_next"
+    }
+  }
+}

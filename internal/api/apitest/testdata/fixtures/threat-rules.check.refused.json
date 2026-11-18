@@ -9,8 +9,10 @@
   "response": {
     "status": 200,
     "body": {
+      "messages": 1,
       "reason": "Sequences of events aren't supported yet.",
-      "status": "refused"
+      "status": "refused",
+      "token": "threat_check_token_test"
     }
   }
 }

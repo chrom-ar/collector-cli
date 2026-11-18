@@ -6,8 +6,10 @@ What changed in each release of `collector`, for the people who use it.
 
 - `threats` lists, shows and resolves what the threat rules caught.
 - `threat-rules` lists the rules, writes your own in plain words
-  (`add`, `rewrite`, checked and previewed before they turn on), turns
-  them on and off, and sets a default's threshold.
+  (`add`, `rewrite`: checked and previewed, with the records they match,
+  before they turn on; type a change at the prompt, or `--continue` a
+  check, to tell Collector more; `--name` and `--description` to name
+  them), turns them on and off, and sets a default's threshold.
 
 ## 0.1.2
 

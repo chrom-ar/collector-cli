@@ -7,30 +7,57 @@ fake-collector threat-rules.list.ok
 exits 0 collector threat-rules list
 stdout '^REF                    STATUS  SEVERITY  DEFAULT  NAME$'
 stdout '^d-account-brute-force  on      high      yes      Brute force on one account$'
-stdout '^r-Rgx7Kq2XpAb2         on      high      no       Two or more failed sign-ins for one account in 5 minutes$'
+stdout '^r-Rgx7Kq2XpAb2         on      high      no       Failed sign-ins on one account$'
 exits 0 collector threat-rules list --json
 stdout '"fn": "count_distinct"'
 
-# add checks the words first. --dry-run stops there.
-fake-collector threat-rules.check.ok
+# add checks the words first: the suggested name, the rule restated,
+# what it checks, what it would have caught and the records it matches.
+# --dry-run stops there, and says how to go on.
+fake-collector threat-rules.check.ok threat-rules.check.follow_up threat-rules.create.named
 exits 0 collector threat-rules add Two or more failed sign-ins for one account in 5 minutes --dry-run
-stdout '^Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more\.$'
+stdout '^5xx from one IP — One IP getting many server errors\.$'
+stdout '^2 or more failed sign-ins for one account in 5 minutes\.$'
+stdout '^Checks: Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 2 or more\.$'
 stdout '^Over the last day it would have fired 2 times, as for:$'
 stdout '^  ada@example\.com  3$'
 stdout '^  bob@example\.com  2$'
+stdout '^Its conditions match 5 records of the last day; the newest:$'
+stdout '^  5m ago  account: bob@example\.com, ip: 198\.51\.100\.7, method: password, outcome: failed, reason: bad_password$'
+! stdout 'more; --dry-run --json'
 stderr 'Nothing turned on \(--dry-run\)\.'
+stderr 'collector threat-rules add .<more words>. --continue threat_check_token_test$'
 exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --dry-run --json
 stdout '"kind": "threshold"'
+stdout '"token": "threat_check_token_test"'
 ! stdout 'Over the last day'
+
+# --continue goes on from that check.
+exits 0 collector threat-rules add 'Make it 30' --continue threat_check_token_test --dry-run
+stdout '^30 or more failed sign-ins for one account in 5 minutes\.$'
+stdout '^Over the last day it wouldn''t have fired\.$'
+stdout '^Its conditions match no records of the last day\.$'
+stderr '--continue threat_check_token_test_next'
+
+# With no words, it turns that check on as it is, with a name of yours.
+exits 0 collector threat-rules add --continue threat_check_token_test --name 'Password guessing' --yes
+stdout '^On: r-Rgx7Kq2XpAb2 Password guessing$'
+! stderr 'Checking'
+
+exits 2 collector threat-rules add --continue threat_check_token_test --dry-run
+stderr '--dry-run checks words'
+exits 2 collector threat-rules add --continue threat_check_token_test --name ' ' --yes
+stderr 'can''t be blank'
 
 # Without a terminal to ask at, it takes --yes.
 exits 2 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes'
 stderr 'pass --yes'
+! stderr 'Checking'
 
 fake-collector threat-rules.check.ok threat-rules.create.ok
 exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes
-stdout '^Sign-ins where outcome is failure'
-stdout '^On: r-Rgx7Kq2XpAb2 Two or more failed sign-ins for one account in 5 minutes$'
+stdout '^Checks: Sign-ins where outcome is failed'
+stdout '^On: r-Rgx7Kq2XpAb2 5xx from one IP$'
 
 # With --json, stdout is the rule; what Collector understood goes to stderr.
 exits 0 collector threat-rules add 'Two or more failed sign-ins for one account in 5 minutes' --yes --json
@@ -46,6 +73,8 @@ stdout '^No preview: Collector couldn''t read the last day''s logs\.$'
 fake-collector threat-rules.check.refused
 exits 1 collector threat-rules add 'A sign-in from a new country, then a password change' --yes
 stderr '^error: collector can''t make a rule of that: Sequences of events aren''t supported yet\.$'
+exits 1 collector threat-rules add 'A sign-in from a new country, then a password change' --dry-run
+stdout '^Collector can''t make a rule of that: Sequences of events aren''t supported yet\.$'
 exits 1 collector threat-rules add 'A sign-in from a new country, then a password change' --yes --json
 stdout '"status": "refused"'
 
@@ -72,7 +101,7 @@ stderr 'say what to look for'
 # rewrite gives an own rule new words.
 fake-collector threat-rules.check.ok threat-rules.rewrite.ok threat-rules.rewrite.default
 exits 0 collector threat-rules rewrite r-Rgx7Kq2XpAb2 'Two or more failed sign-ins for one account in 5 minutes' --yes
-stdout '^On: r-Rgx7Kq2XpAb2 Two or more'
+stdout '^On: r-Rgx7Kq2XpAb2 '
 exits 1 collector threat-rules rewrite d-probing 'Two or more failed sign-ins for one account in 5 minutes' --yes
 stderr 'Default rules can''t be rewritten'
 exits 2 collector threat-rules rewrite r-Rgx7Kq2XpAb2

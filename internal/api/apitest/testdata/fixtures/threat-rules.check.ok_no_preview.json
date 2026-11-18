@@ -9,9 +9,22 @@
   "response": {
     "status": 200,
     "body": {
+      "description": "One IP getting many server errors.",
+      "labels": {
+        "en": {
+          "description": "One IP getting many server errors.",
+          "name": "5xx from one IP"
+        },
+        "es": {
+          "description": "Una IP que recibe muchos errores del servidor.",
+          "name": "5xx desde una IP"
+        }
+      },
+      "messages": 1,
       "model": "claude-sonnet-5-5",
+      "name": "5xx from one IP",
       "preview": null,
-      "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more.",
+      "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 2 or more.",
       "spec": {
         "group_by": [
           "account"
@@ -28,12 +41,13 @@
           {
             "field": "outcome",
             "op": "eq",
-            "value": "failure"
+            "value": "failed"
           }
         ],
         "window": 300
       },
       "status": "ok",
+      "text": "2 or more failed sign-ins for one account in 5 minutes.",
       "token": "threat_check_token_test"
     }
   }

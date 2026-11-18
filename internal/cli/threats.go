@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/chrom-ar/collector-cli/internal/api"
@@ -201,52 +203,95 @@ func newThreatRulesListCmd(a *app) *cobra.Command {
 	return c
 }
 
-// printCheck writes what Collector understood of a rule's words and
-// what it would have caught over the last day.
-func printCheck(w io.Writer, rc *api.RuleCheck) {
-	fmt.Fprintln(w, render.Safe(rc.Sentence))
-	switch {
-	case rc.Preview == nil:
-		fmt.Fprintln(w, "No preview: Collector couldn't read the last day's logs.")
-	case rc.Preview.Count == 0:
-		fmt.Fprintln(w, "Over the last day it wouldn't have fired.")
-	default:
-		line := "Over the last day it would have fired " + plural(rc.Preview.Count, "time")
-		if len(rc.Preview.Examples) == 0 {
-			fmt.Fprintln(w, line+".")
-			return
+// shownRecords is how many of a preview's records the summary lists;
+// --dry-run --json has all of them.
+const shownRecords = 5
+
+// printCheck writes what Collector understood of a rule's words, what it
+// would have caught over the last day, and the records it matches.
+func printCheck(w io.Writer, rc *api.RuleCheck, now time.Time) {
+	if name := deref(rc.Name); name != "" {
+		if d := deref(rc.Description); d != "" {
+			name += " — " + d
 		}
-		fmt.Fprintln(w, line+", as for:")
+		fmt.Fprintln(w, render.Safe(name))
+	}
+	if rc.Text != "" {
+		fmt.Fprintln(w, render.Safe(rc.Text))
+	}
+	fmt.Fprintln(w, "Checks: "+render.Safe(rc.Sentence))
+	p := rc.Preview
+	switch {
+	case p == nil:
+		fmt.Fprintln(w, "No preview: Collector couldn't read the last day's logs.")
+		return
+	case p.Count == 0:
+		fmt.Fprintln(w, "Over the last day it wouldn't have fired.")
+	case len(p.Examples) == 0:
+		fmt.Fprintln(w, "Over the last day it would have fired "+plural(p.Count, "time")+".")
+	default:
+		fmt.Fprintln(w, "Over the last day it would have fired "+plural(p.Count, "time")+", as for:")
 		width := 0
-		for _, e := range rc.Preview.Examples {
+		for _, e := range p.Examples {
 			width = max(width, utf8.RuneCountInString(render.Safe(e.Subject)))
 		}
-		for _, e := range rc.Preview.Examples {
+		for _, e := range p.Examples {
 			s := render.Safe(e.Subject)
 			fmt.Fprintf(w, "  %s%s  %s\n", s, strings.Repeat(" ", width-utf8.RuneCountInString(s)), number(e.Measure))
 		}
 	}
+	if p.Matched == nil {
+		return
+	}
+	if *p.Matched == 0 || len(p.Records) == 0 {
+		fmt.Fprintln(w, "Its conditions match no records of the last day.")
+		return
+	}
+	fmt.Fprintf(w, "Its conditions match %s of the last day; the newest:\n", plural(*p.Matched, "record"))
+	for i, r := range p.Records {
+		if i == shownRecords {
+			fmt.Fprintf(w, "  and %d more; --dry-run --json lists them\n", len(p.Records)-shownRecords)
+			break
+		}
+		fields := make([]string, 0, len(r.Fields))
+		for _, k := range slices.Sorted(maps.Keys(r.Fields)) {
+			fields = append(fields, k+": "+r.Fields[k])
+		}
+		fmt.Fprintf(w, "  %s  %s\n", render.Ago(r.At, now), render.Safe(strings.Join(fields, ", ")))
+	}
+}
+
+// ruleFlags are add's and rewrite's flags.
+type ruleFlags struct {
+	yes, dryRun              bool
+	token, name, description string
 }
 
 func newThreatRulesWriteCmd(a *app, rewrite bool) *cobra.Command {
-	var yes, dryRun bool
-	use, short := "add <words>...", "Write a rule in your words, and turn it on"
+	var f ruleFlags
+	use, short := "add [<words>...]", "Write a rule in your words, and turn it on"
 	example := "  collector threat-rules add 'More than 20 failed sign-ins for one account in 5 minutes'\n" +
-		"  collector threat-rules add 'Any request to /admin from outside 10.0.0.0/8' --dry-run --json"
-	minArgs := 1
+		"  collector threat-rules add 'Any request to /admin from outside 10.0.0.0/8' --dry-run --json\n" +
+		"  collector threat-rules add 'Make it 30' --continue <token> --dry-run\n" +
+		"  collector threat-rules add --continue <token> --name 'Password guessing' --yes"
+	minArgs := 0
 	if rewrite {
-		use, short = "rewrite <ref> <words>...", "New words for one of your rules; it's on afterwards"
+		use, short = "rewrite <ref> [<words>...]", "New words for one of your rules; it's on afterwards"
 		example = "  collector threat-rules rewrite r-Rgx7Kq2XpAb2 'More than 50 failed sign-ins for one account in 5 minutes'"
-		minArgs = 2
+		minArgs = 1
 	}
 	c := &cobra.Command{
 		Use:   use,
 		Short: short,
-		Long: "Collector reads the words with an AI and says, in plain words, what the\n" +
-			"rule would check, and what it would have caught over the last day. It\n" +
-			"turns on only once you say yes (or with --yes). --dry-run only checks;\n" +
-			"with --json it prints Collector's answer, spec included. Owners and\n" +
-			"admins only.",
+		Long: "Collector reads the words with an AI and says what it understood: a\n" +
+			"suggested name, the rule in one sentence, what it checks, what it would\n" +
+			"have caught over the last day and the records it matches. Then it asks\n" +
+			"before turning it on; type a change instead of y to tell Collector more\n" +
+			"(up to 10 messages). --yes doesn't ask.\n\n" +
+			"Without a terminal: --dry-run only checks (--json prints Collector's\n" +
+			"answer, its token and spec included). --continue <token> goes on from\n" +
+			"that check with more words, or with none turns exactly that version on.\n" +
+			"Owners and admins only.",
 		Example: example,
 		Args:    argsBetween(minArgs, 1000),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -255,66 +300,139 @@ func newThreatRulesWriteCmd(a *app, rewrite bool) *cobra.Command {
 				ref, args = args[0], args[1:]
 			}
 			text := strings.TrimSpace(strings.Join(args, " "))
-			if text == "" {
+			switch {
+			case text == "" && f.token == "":
 				return usageError{errors.New("say what to look for, in words")}
+			case text == "" && f.dryRun:
+				return usageError{errors.New("--dry-run checks words: give some")}
+			case cmd.Flags().Changed("name") && strings.TrimSpace(f.name) == "",
+				cmd.Flags().Changed("description") && strings.TrimSpace(f.description) == "":
+				return usageError{errors.New("--name and --description can't be blank")}
 			}
 			ctx := cmd.Context()
 			cl, org, project, err := a.project(ctx, "")
 			if err != nil {
 				return err
 			}
-			return a.writeRule(ctx, cl, org, project, ref, text, yes, dryRun)
+			return a.writeRule(ctx, cl, org, project, ref, text, &f)
 		},
 	}
-	c.Flags().BoolVar(&dryRun, "dry-run", false, "only check the words; turn nothing on")
-	c.Flags().BoolVarP(&yes, "yes", "y", false, "turn it on without asking")
+	fl := c.Flags()
+	fl.BoolVar(&f.dryRun, "dry-run", false, "only check the words; turn nothing on")
+	fl.BoolVarP(&f.yes, "yes", "y", false, "turn it on without asking")
+	fl.StringVar(&f.token, "continue", "", "go on from an earlier check, by its token")
+	fl.StringVar(&f.name, "name", "", "the rule's name, instead of Collector's suggestion (up to 80 characters)")
+	fl.StringVar(&f.description, "description", "", "its description, instead of Collector's suggestion (up to 280 characters)")
 	return c
 }
 
-// writeRule checks text, shows what Collector understood, and once the
-// person agrees turns exactly that on: a new rule, or ref's new words.
-func (a *app) writeRule(ctx context.Context, cl *api.Client, org, project, ref, text string, yes, dryRun bool) error {
+// writeRule checks text (going on from f.token, if any) and shows what
+// Collector understood; at a terminal, typed changes go back to it. Once
+// the person agrees it turns exactly that on: a new rule, or ref's new
+// words. With no text, f.token's check is turned on as it is.
+func (a *app) writeRule(ctx context.Context, cl *api.Client, org, project, ref, text string, f *ruleFlags) error {
 	base := api.ProjectPath(org, project) + "/threat-rules"
-	stop := a.working("Checking the rule with Collector…")
-	var rc api.RuleCheck
-	raw, err := cl.Send(ctx, http.MethodPost, base+"/check", nil, map[string]string{"text": text}, &rc)
-	stop()
-	if err != nil {
-		return err
+	interactive := !f.yes && !f.dryRun && a.env.StdinIsTerminal
+	if !f.yes && !f.dryRun && !interactive {
+		// Before the check: it costs an AI call.
+		return usageError{errors.New("pass --yes to turn it on without a terminal to ask at, or --dry-run to only check it")}
 	}
-	if rc.Status != "ok" {
-		if a.flags.json {
-			if err := a.printJSON(raw); err != nil {
-				return err
+	in := bufio.NewReader(a.env.Stdin)
+	token := f.token
+	for text != "" {
+		stop := a.working("Checking the rule with Collector…")
+		var rc api.RuleCheck
+		body := map[string]string{"text": text}
+		if token != "" {
+			body["token"] = token
+		}
+		raw, err := cl.Send(ctx, http.MethodPost, base+"/check", nil, body, &rc)
+		stop()
+		if err != nil {
+			return err
+		}
+		if f.dryRun || (a.flags.json && rc.Status != "ok") {
+			if a.flags.json {
+				if err := a.printJSON(raw); err != nil {
+					return err
+				}
+			} else {
+				a.printOutcome(a.env.Stdout, &rc)
 			}
+			if rc.Status != "ok" {
+				return silentError{ExitError}
+			}
+			a.progress("Nothing turned on (--dry-run). To change it, or to turn it on:\n" +
+				"  collector threat-rules " + verb(ref) + " '<more words>' --continue " + rc.Token + "\n" +
+				"  collector threat-rules " + verb(ref) + " --continue " + rc.Token + " --yes")
+			return nil
+		}
+		w := a.env.Stdout
+		if a.flags.json {
+			w = a.env.Stderr
+		}
+		if rc.Status != "ok" && !interactive {
+			return fmt.Errorf("collector can't make a rule of that: %s", render.Safe(rc.Reason))
+		}
+		a.printOutcome(w, &rc)
+		token = rc.Token
+		if !interactive {
+			break
+		}
+		question := "Turn it on? [y/N, or type a change]"
+		if rc.Status != "ok" {
+			question = "Say it another way, or press Enter to stop:"
+		}
+		fmt.Fprintf(a.env.Stderr, "%s ", question)
+		line, _ := in.ReadString('\n')
+		answer := strings.TrimSpace(line)
+		switch strings.ToLower(answer) {
+		case "y", "yes":
+			if rc.Status == "ok" {
+				text = ""
+				continue
+			}
+		case "", "n", "no":
+			fmt.Fprintln(a.env.Stderr, "Nothing changed.")
 			return silentError{ExitError}
 		}
-		return fmt.Errorf("collector can't make a rule of that: %s", render.Safe(rc.Reason))
+		text = answer
 	}
-	if dryRun {
-		if a.flags.json {
-			return a.printJSON(raw)
-		}
-		printCheck(a.env.Stdout, &rc)
-		a.progress("Nothing turned on (--dry-run).")
-		return nil
+	return a.turnOn(ctx, cl, org, project, ref, token, f)
+}
+
+func (a *app) printOutcome(w io.Writer, rc *api.RuleCheck) {
+	if rc.Status != "ok" {
+		fmt.Fprintln(w, "Collector can't make a rule of that: "+render.Safe(rc.Reason))
+		return
 	}
-	w := a.env.Stdout
-	if a.flags.json {
-		w = a.env.Stderr
+	printCheck(w, rc, a.env.Now())
+}
+
+func verb(ref string) string {
+	if ref == "" {
+		return "add"
 	}
-	printCheck(w, &rc)
-	if err := a.ask(yes, "Turn it on?", "pass --yes to turn it on without a terminal to ask at, or --dry-run to only check it"); err != nil {
-		return err
+	return "rewrite " + ref
+}
+
+// turnOn creates the rule token's check describes, or gives ref its words.
+func (a *app) turnOn(ctx context.Context, cl *api.Client, org, project, ref, token string, f *ruleFlags) error {
+	body := map[string]string{"token": token}
+	if f.name != "" {
+		body["name"] = strings.TrimSpace(f.name)
 	}
-	method, path := http.MethodPost, base
+	if f.description != "" {
+		body["description"] = strings.TrimSpace(f.description)
+	}
+	method, path := http.MethodPost, api.ProjectPath(org, project)+"/threat-rules"
 	if ref != "" {
 		method, path = http.MethodPut, rulePath(org, project, ref)
 	}
 	var r api.ThreatRule
-	raw, err = cl.Send(ctx, method, path, nil, map[string]string{"token": rc.Token}, &r)
+	raw, err := cl.Send(ctx, method, path, nil, body, &r)
 	if err != nil {
-		// The token is the CLI's doing, not a usage mistake.
+		// The token came from a check, not from how the command was typed.
 		return failure{err}
 	}
 	if a.flags.json {

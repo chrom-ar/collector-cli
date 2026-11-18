@@ -10,11 +10,22 @@
     "status": 200,
     "body": {
       "default": false,
+      "description": "One IP getting many server errors.",
       "enabled": true,
-      "name": "Two or more failed sign-ins for one account in 5 minutes",
+      "labels": {
+        "en": {
+          "description": "One IP getting many server errors.",
+          "name": "5xx from one IP"
+        },
+        "es": {
+          "description": "Una IP que recibe muchos errores del servidor.",
+          "name": "5xx desde una IP"
+        }
+      },
+      "name": "5xx from one IP",
       "paused": false,
       "ref": "r-Rgx7Kq2XpAb2",
-      "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 5 or more.",
+      "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 5 or more.",
       "severity": "high",
       "spec": {
         "group_by": [
@@ -32,12 +43,12 @@
           {
             "field": "outcome",
             "op": "eq",
-            "value": "failure"
+            "value": "failed"
           }
         ],
         "window": 300
       },
-      "text": "Two or more failed sign-ins for one account in 5 minutes"
+      "text": "5 or more failed sign-ins for one account in 5 minutes."
     }
   }
 }

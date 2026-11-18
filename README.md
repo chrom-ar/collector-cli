@@ -191,11 +191,22 @@ collector threat-rules off d-probing                   # on turns it back on
 collector threat-rules threshold d-account-brute-force 30   # or default
 ```
 
-`add` and `rewrite` show what Collector understood, in plain words, and
-what the rule would have caught over the last day, then ask before
-turning it on (`--yes` doesn't ask; `--dry-run` only checks, and with
-`--json` prints the rule as Collector runs it). Writing rules is for
+`add` and `rewrite` show what Collector understood: a suggested name,
+the rule in one sentence, what it would have caught over the last day and
+the records it matches. Then they ask before turning it on; type a change
+instead of `y` to tell Collector more. `--name` and `--description`
+replace the suggested ones, and `--yes` doesn't ask. Writing rules is for
 owners and admins.
+
+Without a terminal, `--dry-run` only checks (with `--json`, Collector's
+answer, the rule as it runs it included), and `--continue <token>` goes
+on from that check:
+
+```sh
+collector threat-rules add 'More than 20 failed sign-ins for one account' --dry-run --json
+collector threat-rules add 'Make it 30' --continue <token> --dry-run
+collector threat-rules add --continue <token> --name 'Password guessing' --yes
+```
 
 ## Speed and signs of life
 

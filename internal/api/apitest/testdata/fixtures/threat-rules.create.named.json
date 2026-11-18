@@ -1,0 +1,55 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/orgs/acme/projects/shop/threat-rules",
+    "body": {
+      "name": "Password guessing",
+      "token": "threat_check_token_test"
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "default": false,
+      "description": "One IP getting many server errors.",
+      "enabled": true,
+      "labels": {
+        "en": {
+          "description": "One IP getting many server errors.",
+          "name": "Password guessing"
+        },
+        "es": {
+          "description": "Una IP que recibe muchos errores del servidor.",
+          "name": "Password guessing"
+        }
+      },
+      "name": "Password guessing",
+      "paused": false,
+      "ref": "r-Rgx7Kq2XpAb2",
+      "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 2 or more.",
+      "severity": "high",
+      "spec": {
+        "group_by": [
+          "account"
+        ],
+        "kind": "threshold",
+        "measure": {
+          "fn": "count"
+        },
+        "severity": "high",
+        "source": "sign_ins",
+        "threshold": 2,
+        "version": 1,
+        "where": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "failed"
+          }
+        ],
+        "window": 300
+      },
+      "text": "2 or more failed sign-ins for one account in 5 minutes."
+    }
+  }
+}

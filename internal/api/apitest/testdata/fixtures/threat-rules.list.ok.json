@@ -9,7 +9,18 @@
       "data": [
         {
           "default": true,
+          "description": "Many failed sign-ins for one account: someone may be guessing its password.",
           "enabled": true,
+          "labels": {
+            "en": {
+              "description": "Many failed sign-ins for one account: someone may be guessing its password.",
+              "name": "Brute force on one account"
+            },
+            "es": {
+              "description": "Muchos inicios de sesión fallidos en una cuenta: alguien podría estar adivinando su contraseña.",
+              "name": "Fuerza bruta contra una cuenta"
+            }
+          },
           "name": "Brute force on one account",
           "paused": false,
           "ref": "d-account-brute-force",
@@ -40,7 +51,18 @@
         },
         {
           "default": true,
+          "description": "One IP failing to sign in to several accounts: a sign of credential stuffing.",
           "enabled": true,
+          "labels": {
+            "en": {
+              "description": "One IP failing to sign in to several accounts: a sign of credential stuffing.",
+              "name": "One IP trying many accounts"
+            },
+            "es": {
+              "description": "Una IP que no logra iniciar sesión en varias cuentas: señal de relleno de credenciales.",
+              "name": "Una IP que prueba muchas cuentas"
+            }
+          },
           "name": "One IP trying many accounts",
           "paused": false,
           "ref": "d-ip-many-accounts",
@@ -72,7 +94,18 @@
         },
         {
           "default": true,
+          "description": "One IP hitting many paths that don't exist: someone mapping the application.",
           "enabled": true,
+          "labels": {
+            "en": {
+              "description": "One IP hitting many paths that don't exist: someone mapping the application.",
+              "name": "Scanning"
+            },
+            "es": {
+              "description": "Una IP que pide muchas rutas inexistentes: alguien está mapeando la aplicación.",
+              "name": "Escaneo"
+            }
+          },
           "name": "Scanning",
           "paused": false,
           "ref": "d-scanning",
@@ -104,7 +137,18 @@
         },
         {
           "default": true,
+          "description": "Requests for paths attackers try first, like .env or wp-admin.",
           "enabled": true,
+          "labels": {
+            "en": {
+              "description": "Requests for paths attackers try first, like .env or wp-admin.",
+              "name": "Probing known paths"
+            },
+            "es": {
+              "description": "Solicitudes a rutas que se prueban primero en un ataque, como .env o wp-admin.",
+              "name": "Sondeo de rutas conocidas"
+            }
+          },
           "name": "Probing known paths",
           "paused": false,
           "ref": "d-probing",
@@ -138,7 +182,18 @@
         },
         {
           "default": true,
+          "description": "Many 401 and 403 responses to one IP: someone trying what they can't reach.",
           "enabled": true,
+          "labels": {
+            "en": {
+              "description": "Many 401 and 403 responses to one IP: someone trying what they can't reach.",
+              "name": "Burst of forbidden responses"
+            },
+            "es": {
+              "description": "Muchas respuestas 401 y 403 a una misma IP: alguien intenta entrar donde no tiene acceso.",
+              "name": "Ráfaga de respuestas prohibidas"
+            }
+          },
           "name": "Burst of forbidden responses",
           "paused": false,
           "ref": "d-forbidden-burst",
@@ -172,11 +227,22 @@
         },
         {
           "default": false,
+          "description": "Someone may be guessing an account's password.",
           "enabled": true,
-          "name": "Two or more failed sign-ins for one account in 5 minutes",
+          "labels": {
+            "en": {
+              "description": "Someone may be guessing an account's password.",
+              "name": "Failed sign-ins on one account"
+            },
+            "es": {
+              "description": "Alguien podría estar adivinando la contraseña de una cuenta.",
+              "name": "Inicios fallidos en una cuenta"
+            }
+          },
+          "name": "Failed sign-ins on one account",
           "paused": false,
           "ref": "r-Rgx7Kq2XpAb2",
-          "sentence": "Sign-ins where outcome is failure, counted per account over 5 minutes: a detection at 2 or more.",
+          "sentence": "Sign-ins where outcome is failed, counted per account over 5 minutes: a detection at 2 or more.",
           "severity": "high",
           "spec": {
             "group_by": [
@@ -194,7 +260,7 @@
               {
                 "field": "outcome",
                 "op": "eq",
-                "value": "failure"
+                "value": "failed"
               }
             ],
             "window": 300
