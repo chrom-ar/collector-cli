@@ -2,6 +2,13 @@
 
 What changed in each release of `collector`, for the people who use it.
 
+## Unreleased
+
+- `collector version` prints the version and checks now whether a newer
+  one is out, with the command to upgrade; `--json` too.
+- `threats show` prints the requests behind a detection as `logs` prints
+  them, with the request id to look up in `collector logs --request`.
+
 ## 0.3.0
 
 - `threat-rules add` and `rewrite` show the suggested name and

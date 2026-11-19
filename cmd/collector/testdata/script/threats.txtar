@@ -22,8 +22,11 @@ exits 0 collector threats show Det7Kq2XpAb2
 stdout '^Probing known paths: ip: 203\.0\.113\.9$'
 stdout '^open · medium · fired 1 time · last measure 4$'
 stdout '^First seen 5m ago · last seen 5m ago$'
+# The records behind it, as collector logs prints them.
 stdout '^Evidence:$'
-stdout '^  request rec-request-0001, 5m ago$'
+stdout '^  12:00:00\.000 GET /\.env 404 1ms 203\.0\.113\.9 req-0001$'
+! stdout 'rec-request-0001'
+stderr '^What else that request did: collector logs --request req-0001$'
 stdout '/o/acme/p/shop/threats/Det7Kq2XpAb2$'
 exits 0 collector threats show Det7Kq2XpAb2 --json
 stdout '"rule_key": "d:probing"'

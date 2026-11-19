@@ -21,6 +21,7 @@
       "id": "Det7Kq2XpAb2",
       "last_measure": 4,
       "last_seen_at": "2026-11-13T12:00:00Z",
+      "records": [],
       "rule_key": "d:probing",
       "rule_name": "Probing known paths",
       "severity": "medium",

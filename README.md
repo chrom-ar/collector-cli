@@ -26,7 +26,7 @@ puts `collector` in `/usr/local/bin` when it can, else `~/.local/bin`
 (`COLLECTOR_INSTALL_DIR` picks another). Run it again to upgrade.
 At a terminal, `collector` says when a new version is out, at most once a
 day, with the command to upgrade (`COLLECTOR_NO_UPDATE_NOTIFIER=1` turns
-it off).
+it off). `collector version` checks now, anywhere (`--json` too).
 
 On Debian, Ubuntu and derivatives, add Chroma's apt repository once, and
 `sudo apt upgrade` brings each new release:

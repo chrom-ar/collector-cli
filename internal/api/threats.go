@@ -16,7 +16,10 @@ type Detection struct {
 	FiredCount  int            `json:"fired_count"`
 	LastMeasure *float64       `json:"last_measure"`
 	Evidence    []Evidence     `json:"evidence"`
-	URL         string         `json:"url"`
+	// Records are the log records behind it, newest first, as GET …/logs
+	// gives them; empty when no longer kept.
+	Records []json.RawMessage `json:"records"`
+	URL     string            `json:"url"`
 }
 
 // Evidence is a record behind a detection.

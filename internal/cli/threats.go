@@ -112,15 +112,29 @@ func newThreatsShowCmd(a *app) *cobra.Command {
 				facts,
 				fmt.Sprintf("First seen %s · last seen %s", render.Ago(d.FirstSeenAt, now), render.Ago(d.LastSeenAt, now)),
 			}
-			if len(d.Evidence) > 0 {
-				lines = append(lines, "Evidence:")
-				for _, e := range d.Evidence {
-					lines = append(lines, fmt.Sprintf("  %s %s, %s", e.Kind, e.ID, render.Ago(e.At, now)))
-				}
-			}
-			lines = append(lines, d.URL)
 			for _, l := range lines {
 				a.out("%s", render.Safe(l))
+			}
+			requestID := ""
+			if records := decodeRecords(d.Records); len(records) > 0 {
+				// Oldest first, as collector logs prints them.
+				a.out("Evidence:")
+				p := a.recordPrinter(servers(records) > 1)
+				for _, r := range slices.Backward(records) {
+					a.out("  %s", p.line(r))
+					if requestID == "" && r.RequestID != "" {
+						requestID = r.RequestID
+					}
+				}
+			} else if len(d.Evidence) > 0 {
+				a.out("Evidence:")
+				for _, e := range d.Evidence {
+					a.out("  %s", render.Safe(fmt.Sprintf("%s %s, %s", e.Kind, e.ID, render.Ago(e.At, now))))
+				}
+			}
+			a.out("%s", render.Safe(d.URL))
+			if requestID != "" {
+				a.progress("What else that request did: collector logs --request %s", render.Safe(requestID))
 			}
 			return nil
 		},

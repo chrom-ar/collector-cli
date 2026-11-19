@@ -29,6 +29,8 @@ type app struct {
 	store   auth.TokenStore
 	session *session
 	org     string // Once known, for error hints.
+	// noNotice: the command said whether there's a newer collector already.
+	noNotice bool
 }
 
 type globalFlags struct {
