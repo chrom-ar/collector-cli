@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.4.0
 
 - `collector version` prints the version and checks now whether a newer
   one is out, with the command to upgrade; `--json` too.
