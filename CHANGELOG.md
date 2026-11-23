@@ -2,7 +2,7 @@
 
 What changed in each release of `collector`, for the people who use it.
 
-## Unreleased
+## 0.5.0
 
 - `collector guide` prints the setup guide for AI agents as Markdown, no
   sign-in needed; `--help`, `login` and `projects create` point to it.
