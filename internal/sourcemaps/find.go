@@ -33,8 +33,12 @@ type Map struct {
 	BundleFile string
 	// Bytes is the size of what will be uploaded, uncompressed.
 	Bytes int64
-	// Content, when set, is uploaded instead of MapFile: an index map, flattened.
+	// Content, when set, is uploaded instead of MapFile: an index map,
+	// flattened, or a generated map.
 	Content []byte
+	// Generated: made from the script itself (FindOptions.Sources), so
+	// there's no MapFile, and nothing for Delete to do.
+	Generated bool
 }
 
 // FindOptions says where a directory is served and which maps to skip.
@@ -44,6 +48,10 @@ type FindOptions struct {
 	URLPrefix string
 	// MaxMapBytes skips larger maps with a warning; 0 means MaxMapBytes.
 	MaxMapBytes int64
+	// Sources makes a map for each script that has none, for apps that
+	// serve their JavaScript as written: line for line, carrying the
+	// script. Minified scripts are skipped with a warning.
+	Sources bool
 }
 
 // Found is what Find found: the maps to upload, and warnings about the
@@ -95,13 +103,16 @@ func Find(dir string, opts FindOptions) (Found, error) {
 	}
 
 	bundleOfMap := map[string]string{}
+	commented := map[string]bool{} // Scripts that name a map, of any kind.
 	for _, file := range files {
 		if !scriptName.MatchString(file) {
 			continue
 		}
-		if mapFile := mapOfBundle(file); mapFile != "" {
+		mapFile, named := mapOfBundle(file)
+		if mapFile != "" {
 			bundleOfMap[mapFile] = file
 		}
+		commented[file] = named
 	}
 
 	var mapFiles []string
@@ -113,6 +124,7 @@ func Find(dir string, opts FindOptions) (Found, error) {
 	slices.Sort(mapFiles)
 
 	var found Found
+	covered := map[string]bool{} // Scripts with a map here.
 	for _, mapFile := range mapFiles {
 		shown := filepath.ToSlash(relativeTo(root, mapFile))
 		m, warning, err := readMap(root, mapFile, maxBytes, bundleOfMap)
@@ -122,11 +134,34 @@ func Find(dir string, opts FindOptions) (Found, error) {
 		if warning != "" {
 			found.Warnings = append(found.Warnings, shown+": "+warning)
 		}
+		if b := bundleOfMap[mapFile]; b != "" {
+			covered[b] = true
+		}
 		if m == nil {
 			continue
 		}
+		covered[m.Path] = true
 		m.Path = prefix + filepath.ToSlash(relativeTo(root, m.Path))
 		found.Maps = append(found.Maps, *m)
+	}
+	if !opts.Sources {
+		return found, nil
+	}
+	for _, file := range files {
+		if !scriptName.MatchString(file) || commented[file] || covered[file] || exists(file+".map") {
+			continue
+		}
+		m, warning, err := generated(root, file, maxBytes)
+		if err != nil {
+			return Found{}, err
+		}
+		if warning != "" {
+			found.Warnings = append(found.Warnings, filepath.ToSlash(relativeTo(root, file))+": "+warning)
+		}
+		if m != nil {
+			m.Path = prefix + filepath.ToSlash(relativeTo(root, m.Path))
+			found.Maps = append(found.Maps, *m)
+		}
 	}
 	return found, nil
 }
@@ -262,30 +297,31 @@ func walk(root string) ([]string, error) {
 }
 
 // mapOfBundle is the local map a bundle's sourceMappingURL comment points
-// at, or "". Only the last kilobyte of the bundle is read.
-func mapOfBundle(bundle string) string {
+// at, or "", and whether it has the comment at all (an inline or remote
+// map too). Only the last kilobyte of the bundle is read.
+func mapOfBundle(bundle string) (string, bool) {
 	f, err := os.Open(bundle) //nolint:gosec // G304: a file found under the directory the user named.
 	if err != nil {
-		return ""
+		return "", false
 	}
 	defer func() { _ = f.Close() }()
 	info, err := f.Stat()
 	if err != nil {
-		return ""
+		return "", false
 	}
 	const tail = 1024
 	offset := max(info.Size()-tail, 0)
 	buf := make([]byte, info.Size()-offset)
 	if _, err := f.ReadAt(buf, offset); err != nil && !errors.Is(err, io.EOF) {
-		return ""
+		return "", false
 	}
 	match := mappingURL.FindSubmatch(buf)
 	if match == nil {
-		return ""
+		return "", false
 	}
 	ref := string(match[1])
 	if strings.HasPrefix(ref, "data:") || remoteURL.MatchString(ref) {
-		return ""
+		return "", true
 	}
 	if i := strings.IndexAny(ref, "?#"); i >= 0 {
 		ref = ref[:i]
@@ -295,9 +331,9 @@ func mapOfBundle(bundle string) string {
 	}
 	path := filepath.FromSlash(ref)
 	if filepath.IsAbs(path) {
-		return filepath.Clean(path)
+		return filepath.Clean(path), true
 	}
-	return filepath.Join(filepath.Dir(bundle), path)
+	return filepath.Join(filepath.Dir(bundle), path), true
 }
 
 func relativeTo(root, path string) string {
@@ -317,6 +353,9 @@ func exists(path string) bool {
 // bundles that point at them. It stops at the first error.
 func Delete(maps []Map) error {
 	for _, m := range maps {
+		if m.Generated {
+			continue
+		}
 		if err := os.Remove(m.MapFile); err != nil {
 			return fmt.Errorf("deleting %s: %w", m.MapFile, err)
 		}

@@ -2,6 +2,7 @@ package sourcemaps
 
 import (
 	"bytes"
+	"cmp"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -108,7 +109,7 @@ func Upload(ctx context.Context, maps []Map, opts Options) Result {
 		gz, err := gzipMap(m)
 		if err != nil {
 			result.OK = false
-			result.Errors = append(result.Errors, u.scrub(fmt.Sprintf("couldn't read %s: %v", m.MapFile, err)))
+			result.Errors = append(result.Errors, u.scrub(fmt.Sprintf("couldn't read %s: %v", cmp.Or(m.MapFile, m.BundleFile), err)))
 			continue
 		}
 		items = append(items, prepared{m: m, gz: gz})
@@ -235,6 +236,9 @@ func (u *uploader) body(items []prepared) (data []byte, contentType string, err 
 	files := make([]string, len(items))
 	for i, item := range items {
 		files[i] = item.m.MapFile
+		if item.m.Generated {
+			files[i] = item.m.BundleFile + ".map"
+		}
 	}
 	names := partNames(files)
 	type manifestEntry struct {

@@ -59,6 +59,10 @@ func run(args []string, d deps) int {
 	if err != nil {
 		cacheDir = "" // No update notice.
 	}
+	dir, err := os.Getwd()
+	if err != nil {
+		dir = "" // No project file.
+	}
 	return cli.Run(ctx, args, cli.Env{
 		Stdout:           os.Stdout,
 		Stderr:           os.Stderr,
@@ -78,6 +82,7 @@ func run(args []string, d deps) int {
 		StderrIsTerminal: term.IsTerminal(int(os.Stderr.Fd())), //nolint:gosec // Fd fits in an int.
 		CacheDir:         cacheDir,
 		Executable:       executable(),
+		Dir:              dir,
 	})
 }
 

@@ -88,7 +88,7 @@ func TestSendTestEventSendsABearerEventAndPrintsTheID(t *testing.T) {
 	tags, _ := b["tags"].(map[string]any)
 	sdk, _ := b["sdk"].(map[string]any)
 	fp, _ := b["fingerprint"].([]any)
-	if b["v"] != 1.0 || b["platform"] != "node" || b["level"] != "error" || b["server"] != "box" ||
+	if b["v"] != 1.0 || b["platform"] != "other" || b["level"] != "error" || b["server"] != "box" ||
 		exception["type"] != "CollectorTest" ||
 		exception["message"] != "Test event from collector-cli test. If you can see it in Collector, your setup works." ||
 		tags["collector.test"] != "true" || len(fp) != 1 || fp[0] != "collector.test" ||

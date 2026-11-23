@@ -27,7 +27,11 @@ func newAuditCmd(a *app) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			org, err := a.resolver(cl).Org(ctx)
+			res, err := a.resolver(cl)
+			if err != nil {
+				return err
+			}
+			org, err := res.Org(ctx)
 			if err != nil {
 				return err
 			}

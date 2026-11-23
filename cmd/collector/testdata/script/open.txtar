@@ -1,0 +1,16 @@
+# open prints the page's URL; nothing needs asking when org and project are named.
+env COLLECTOR_TOKEN=cltp_test_token_laptop
+env COLLECTOR_URL=http://127.0.0.1:1
+env COLLECTOR_ORG=acme
+env COLLECTOR_PROJECT=shop
+
+exits 0 collector open
+stdout '^http://127\.0\.0\.1:1/o/acme/p/shop$'
+exits 0 collector open settings
+stdout '^http://127\.0\.0\.1:1/o/acme/p/shop/settings$'
+exits 0 collector open setup
+stdout '^http://127\.0\.0\.1:1/o/acme/p/shop/setup$'
+exits 2 collector open setup extra
+stderr 'unexpected arguments: extra'
+exits 2 collector open nowhere
+stderr 'use issue, logs, speed, settings or setup'

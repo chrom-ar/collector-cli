@@ -37,7 +37,30 @@ stdout 'Deleted the \.map files\.'
 # No maps: exit 1 with how to turn them on.
 exits 1 collector upload dist --release web@1.4.2
 stderr 'no source maps found in dist'
+stderr 'pass --sources'
 
+# --sources: scripts served as written get a map made from them; minified
+# ones are skipped with a warning, and --delete leaves them all alone.
+exits 0 collector upload plain --release web@1.4.2 --sources --dry-run
+stdout '^would upload /assets/index-a1b2c3d4\.js \(map made from the script\)$'
+! stdout 'vendor'
+stderr '^warning: assets/vendor/lib\.min\.js: skipped, it looks minified: build a source map for it instead$'
+exits 0 collector upload plain --release web@1.4.2 --sources --delete
+stdout '^uploaded /assets/index-a1b2c3d4\.js$'
+stdout '^Uploaded 1 map\(s\) for release web@1\.4\.2\.$'
+! stdout 'Deleted'
+exists plain/assets/index-a1b2c3d4.js
+exists plain/assets/vendor/lib.min.js
+! exists plain/assets/index-a1b2c3d4.js.map
+exits 1 collector upload plain/assets/vendor --release web@1.4.2 --sources
+stderr 'nothing to upload from plain/assets/vendor: no source maps, and no scripts to make one for'
+
+-- plain/assets/index-a1b2c3d4.js --
+export function hello() {
+  return "hi"
+}
+-- plain/assets/vendor/lib.min.js --
+var a=1;
 -- dist/assets/index-a1b2c3d4.js --
 console.log("hi");
 //# sourceMappingURL=index-a1b2c3d4.js.map

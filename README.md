@@ -124,12 +124,27 @@ collector invitations revoke <id>
 collector audit                                      # who did what (owners, admins)
 ```
 
-The organization and project come from `--org` and `--project` (or
-`COLLECTOR_ORG` and `COLLECTOR_PROJECT`), else the default you set with
-`collector use acme/shop` (per Collector; `collector use --clear` forgets
-it). When you're in only one organization, or it has only one project,
-you don't need any of them; when it's ambiguous, the error lists the
-choices.
+Which organization and project a command works on, strongest first:
+
+1. `--org` and `--project`.
+2. `COLLECTOR_ORG` and `COLLECTOR_PROJECT`.
+3. The nearest `.collector.toml`, in the current directory or above it.
+   `collector use --here acme/shop` writes one; commit it, and everyone
+   working in the repository uses that project. `--here --clear` removes it.
+4. The default you set with `collector use acme/shop` (per Collector;
+   `collector use --clear` forgets it).
+5. The only organization you're in, or the only project it has. When it's
+   ambiguous, the error lists the choices.
+
+A project from 3 or 4 counts only with the organization it was set with.
+`collector use` (no argument) and `collector whoami` show what commands
+use here, and where each part comes from.
+
+```toml
+# .collector.toml
+org = "acme"
+project = "shop"
+```
 
 ## Issues
 
@@ -220,6 +235,10 @@ collector signals                     # when each environment's servers and brow
 
 ## Using it with an agent
 
+`collector guide` prints Collector's setup guide for AI coding agents, as
+Markdown, with no sign-in needed (`--lang es` for Spanish). Hand it to
+your agent to set a project up.
+
 ```sh
 collector issues list --env production --json
 collector issues show 2C7ZffP787kc --markdown > issue.md
@@ -243,7 +262,7 @@ claude "Fix the error in issue.md. When the fix is merged, run: collector issues
   `/api/v1`, for anything without a command of its own.
 - `collector open issue <id>` prints (and, at a terminal, opens) the
   issue's page in the web app; also `open logs …`, `open speed`,
-  `open settings`.
+  `open settings`, and `open setup` (the DSN and how to install an SDK).
 
 ## Source maps
 
@@ -270,6 +289,7 @@ COLLECTOR_UPLOAD_TOKEN=cltu_… COLLECTOR_DSN=https://clt_…@app.clt.chrom.ar \
 | `--dsn` | `COLLECTOR_DSN` | Your project's DSN |
 | `--url-prefix` | `/` | The URL path the directory is served at, e.g. `/static/` |
 | `--delete` | off | Delete the `.map` files (and the comments pointing at them) after a successful upload |
+| `--sources` | off | Make maps for scripts served as written (see below) |
 | `--dry-run` | off | List what would be uploaded, send nothing |
 
 It finds every `.map` file under the directory and pairs it with its bundle
@@ -291,6 +311,23 @@ export default defineConfig({
 ```sh
 vite build && collector upload ./dist --release "$GIT_SHA" --delete
 ```
+
+Apps that serve their JavaScript as written, with no bundler (import
+maps, say), have no maps to upload. `--sources` makes one for each script
+that has none: line for line, carrying the script itself, so stack traces
+show your code and the lines around it. Point it at what's served, after
+fingerprinting:
+
+```sh
+bin/rails assets:precompile
+collector upload public/assets --url-prefix /assets --sources --release "$GIT_SHA"
+```
+
+Minified scripts (vendored libraries) are skipped with a warning, scripts
+with a map of their own keep it, and `--delete` never deletes scripts or
+the maps made from them. Asset digests are left out of the names shown in
+stack traces, so `controllers/hello-1a2b3c4d.js` reads as
+`controllers/hello.js` from one deploy to the next.
 
 ```sh
 collector test --dsn "$COLLECTOR_DSN"   # sends one test event, the way a server does

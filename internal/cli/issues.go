@@ -43,7 +43,10 @@ func (a *app) locate(ctx context.Context, c *api.Client, ref string) (string, er
 		a.org = r.Org
 		return issuePath(r.Org, r.Project, r.ID), nil
 	}
-	res := a.resolver(c)
+	res, err := a.resolver(c)
+	if err != nil {
+		return "", err
+	}
 	if res.Explicit() {
 		org, project, err := res.Both(ctx)
 		if err != nil {
@@ -71,7 +74,11 @@ func (a *app) showPath(ctx context.Context, c *api.Client, ref string) (string, 
 	if err != nil {
 		return "", err
 	}
-	if r.Org != "" || a.resolver(c).Explicit() {
+	res, err := a.resolver(c)
+	if err != nil {
+		return "", err
+	}
+	if r.Org != "" || res.Explicit() {
 		return a.locate(ctx, c, ref)
 	}
 	return "/issues/" + api.Seg(r.ID), nil

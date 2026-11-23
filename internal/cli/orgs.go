@@ -51,8 +51,14 @@ func (a *app) orgArg(ctx context.Context, args []string) (*api.Client, string, e
 	org := ""
 	if len(args) > 0 {
 		org = args[0]
-	} else if org, err = a.resolver(cl).Org(ctx); err != nil {
-		return nil, "", err
+	} else {
+		res, err := a.resolver(cl)
+		if err != nil {
+			return nil, "", err
+		}
+		if org, err = res.Org(ctx); err != nil {
+			return nil, "", err
+		}
 	}
 	a.org = org
 	return cl, org, nil

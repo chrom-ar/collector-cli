@@ -36,16 +36,56 @@ type Resolver struct {
 	API  API
 	Flag Given // --org, --project
 	Env  Given // COLLECTOR_ORG, COLLECTOR_PROJECT
-	// Default is what collector use stored; its project belongs to its
-	// org only.
+	// File is the project file's (FindFile), and Default what collector
+	// use stored. The project of each belongs to its own org only.
+	File    Given
 	Default Given
 
 	org string
 }
 
+// Layer is where a choice came from.
+type Layer int
+
+// The layers, strongest first.
+const (
+	FromNone    Layer = iota // Nothing named it.
+	FromFlag                 // --org, --project
+	FromEnv                  // COLLECTOR_ORG, COLLECTOR_PROJECT
+	FromFile                 // The project file.
+	FromDefault              // collector use.
+)
+
+// Named is what was named without asking Collector, and where each came
+// from: the org from the strongest layer naming one; the project from
+// --project or COLLECTOR_PROJECT, else from the project file or collector
+// use, when that one's org is the org chosen.
+func (r *Resolver) Named() (org string, orgFrom Layer, project string, projectFrom Layer) {
+	layers := []struct {
+		g    Given
+		from Layer
+	}{{r.Flag, FromFlag}, {r.Env, FromEnv}, {r.File, FromFile}, {r.Default, FromDefault}}
+	for _, l := range layers {
+		if o := strings.TrimSpace(l.g.Org); o != "" {
+			org, orgFrom = o, l.from
+			break
+		}
+	}
+	for _, l := range layers {
+		p := strings.TrimSpace(l.g.Project)
+		if p == "" {
+			continue
+		}
+		if l.from == FromFlag || l.from == FromEnv || (org != "" && strings.TrimSpace(l.g.Org) == org) {
+			return org, orgFrom, p, l.from
+		}
+	}
+	return org, orgFrom, "", FromNone
+}
+
 // Org is the organization.
 func (r *Resolver) Org(ctx context.Context) (string, error) {
-	if g := first(r.Flag.Org, r.Env.Org, r.Default.Org); g != "" {
+	if g, _, _, _ := r.Named(); g != "" {
 		return g, nil
 	}
 	if r.org != "" {
@@ -69,8 +109,10 @@ func (r *Resolver) Project(ctx context.Context, org string) (string, error) {
 	if g := first(r.Flag.Project, r.Env.Project); g != "" {
 		return g, nil
 	}
-	if r.Default.Project != "" && org == r.Default.Org {
-		return r.Default.Project, nil
+	for _, l := range []Given{r.File, r.Default} {
+		if p := strings.TrimSpace(l.Project); p != "" && strings.TrimSpace(l.Org) == org {
+			return p, nil
+		}
 	}
 	page, err := r.API.Projects(ctx, org, api.Query{"limit": "100"}, false)
 	if err != nil {
@@ -94,8 +136,8 @@ func (r *Resolver) Both(ctx context.Context) (org, project string, err error) {
 
 // Explicit reports whether both were named, so nothing need be asked.
 func (r *Resolver) Explicit() bool {
-	org := first(r.Flag.Org, r.Env.Org, r.Default.Org)
-	return org != "" && (first(r.Flag.Project, r.Env.Project) != "" || (r.Default.Project != "" && org == r.Default.Org))
+	org, _, project, _ := r.Named()
+	return org != "" && project != ""
 }
 
 func first(vals ...string) string {

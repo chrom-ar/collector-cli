@@ -2,6 +2,20 @@
 
 What changed in each release of `collector`, for the people who use it.
 
+## Unreleased
+
+- `collector guide` prints the setup guide for AI agents as Markdown, no
+  sign-in needed; `--help`, `login` and `projects create` point to it.
+- `collector open setup` opens the project's setup page.
+- A `.collector.toml` in a repository says which organization and project
+  commands there use: `collector use --here` writes it. It beats
+  `collector use`; `--org`/`--project` and the environment still beat it.
+  `use` and `whoami` say where the choice comes from.
+- `collector upload --sources` makes maps for scripts served as written,
+  with no bundler; minified ones are skipped with a warning, and asset
+  digests are left out of the names in stack traces.
+- `collector test` no longer marks the project as Node.
+
 ## 0.4.0
 
 - `collector version` prints the version and checks now whether a newer

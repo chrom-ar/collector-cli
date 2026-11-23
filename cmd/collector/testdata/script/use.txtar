@@ -12,14 +12,62 @@ stdout '^Commands on http://127\.0\.0\.1:\d+ now use acme/shop\.$'
 grep '"project": "shop"' config/collector/config.json
 
 exits 0 collector use
-stdout '^acme/shop$'
+stdout '^acme/shop \(from collector use\)$'
 
 # Two organizations, yet nothing to say: the default answers.
 exits 0 collector issues list nothing matches this
 stdout 'No unresolved issues'
 
 exits 0 collector whoami
-stdout '^Default: acme/shop$'
+stdout '^Using: acme/shop \(from collector use\)$'
+
+# The environment and flags win, and say so.
+env COLLECTOR_PROJECT=api
+exits 0 collector use
+stdout '^acme/api \(acme from collector use, api from COLLECTOR_PROJECT\)$'
+exits 0 collector use --org beta
+stdout '^beta/api \(beta from --org, api from COLLECTOR_PROJECT\)$'
+env COLLECTOR_PROJECT=
+
+# A project file, found from below, beats collector use; --org beats it.
+exec mkdir -p repo/web/src
+cp collector.toml repo/.collector.toml
+cd repo/web/src
+exits 0 collector use
+stdout '^acme/docs \(from .*[/\\]repo[/\\]\.collector\.toml\)$'
+exits 0 collector whoami
+stdout '^Using: acme/docs \(from .*\.collector\.toml\)$'
+exits 0 collector use --org beta
+stdout '^beta \(from --org\)$'
+
+# use --here writes one, checked against Collector first.
+cd $WORK/repo/web
+exits 0 collector use --here acme/shop
+stdout '^Commands in .*web now use acme/shop: \.collector\.toml written; commit it\.$'
+stderr 'it wins over collector use'
+grep '^org = "acme"$' .collector.toml
+grep '^project = "shop"$' .collector.toml
+cd src
+exits 0 collector use
+stdout '^acme/shop \(from .*[/\\]web[/\\]\.collector\.toml\)$'
+
+# Without an argument, it writes what commands use now.
+cd $WORK/repo
+exits 0 collector use --here --project shop
+grep '^project = "shop"$' .collector.toml
+
+exits 0 collector use --here --clear
+stdout '^Removed \.collector\.toml from '
+! exists .collector.toml
+exits 0 collector use --here --clear
+stdout '^No \.collector\.toml in '
+
+# A broken one is a usage mistake that names the file.
+cp $WORK/broken.toml .collector.toml
+exits 2 collector issues list
+stderr '\.collector\.toml: line 1: unknown key "team"'
+rm .collector.toml
+cd $WORK
 
 exits 0 collector use acme
 stdout 'now use acme\.$'
@@ -30,3 +78,10 @@ stderr 'expected <org> or <org>/<project>'
 exits 0 collector use --clear
 stdout '^No default on'
 ! grep acme config/collector/config.json
+
+-- collector.toml --
+# Committed.
+org = "acme"
+project = "docs"
+-- broken.toml --
+team = "acme"

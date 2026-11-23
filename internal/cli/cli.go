@@ -56,6 +56,9 @@ type Env struct {
 	// the update notice tells how to upgrade from how it was installed.
 	Executable string
 	GOOS       string // The operating system; "" is runtime.GOOS.
+	// Dir is the working directory, where the project file is looked for
+	// upwards from; "" looks nowhere.
+	Dir string
 }
 
 // Run executes the command line args (without the program name) and
@@ -106,6 +109,9 @@ func withDefaults(env Env) Env {
 const rootLong = `collector manages Collector from the terminal: projects and their
 secrets, issues and logs, and source map uploads. For people, their
 coding agents and CI.
+
+Setting a project up with an AI coding agent? collector guide prints the
+guide for it, as Markdown.
 
 Output is for people by default; --json prints Collector's JSON as is,
 and --markdown Collector's text for an AI, where offered.
@@ -183,7 +189,7 @@ func newRootCmd(a *app) *cobra.Command {
 	add("setup", newProjectsCmd(a), newDSNCmd(a), newSecretsCmd(a, uploadTokens), newSecretsCmd(a, serverKeys), newOriginsCmd(a))
 	add("work", newIssuesCmd(a), newLogsCmd(a), newThreatsCmd(a), newThreatRulesCmd(a))
 	add("ci", newUploadCmd(a), newTestCmd(a))
-	add("more", newOrgsCmd(a), newMembersCmd(a), newInvitationsCmd(a), newAuditCmd(a), newSpeedCmd(a), newSignalsCmd(a), newOpenCmd(a), newAPICmd(a), newVersionCmd(a))
+	add("more", newOrgsCmd(a), newMembersCmd(a), newInvitationsCmd(a), newAuditCmd(a), newSpeedCmd(a), newSignalsCmd(a), newOpenCmd(a), newAPICmd(a), newGuideCmd(a), newVersionCmd(a))
 	root.SetHelpCommandGroupID("more")
 	root.SetCompletionCommandGroupID("more")
 

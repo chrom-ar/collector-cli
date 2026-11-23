@@ -46,6 +46,7 @@ fake-collector projects.create.ok projects.create.invalid
 exits 0 collector projects create Docs
 stdout '^Docs \(docs\)$'
 stdout '^DSN: http://clt_test_key_docs@'
+stderr '^Setting it up with an AI coding agent: collector guide$'
 exits 1 collector projects create ''
 stderr '^error: Some values aren''t valid\.$'
 stderr '^  name: can''t be blank$'

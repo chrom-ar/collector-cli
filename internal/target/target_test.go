@@ -3,6 +3,8 @@ package target
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -150,5 +152,97 @@ func TestDefaultComesAfterFlagsAndEnv(t *testing.T) {
 	r = &Resolver{API: f, Flag: Given{Org: "b"}, Default: Given{Org: "a", Project: "y"}}
 	if _, err := r.Project(ctx, "b"); err == nil || !strings.Contains(err.Error(), "b has 2 projects") {
 		t.Errorf("another org: %v", err)
+	}
+}
+
+// The order: --org/--project, COLLECTOR_ORG/COLLECTOR_PROJECT, the
+// project file, collector use, then the only one there is.
+func TestPrecedence(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeAPI{orgs: []string{"a", "b"}, projects: []string{"x", "y"}}
+	file := Given{Org: "f", Project: "fp"}
+	def := Given{Org: "d", Project: "dp"}
+	cases := []struct {
+		name              string
+		r                 Resolver
+		org, project      string
+		orgFrom, projFrom Layer
+	}{
+		{"file beats use", Resolver{File: file, Default: def}, "f", "fp", FromFile, FromFile},
+		{"env beats file", Resolver{Env: Given{Org: "e", Project: "ep"}, File: file, Default: def}, "e", "ep", FromEnv, FromEnv},
+		{"flag beats env", Resolver{Flag: Given{Org: "g"}, Env: Given{Org: "e", Project: "ep"}, File: file}, "g", "ep", FromFlag, FromEnv},
+		{"file project needs its org", Resolver{Flag: Given{Org: "d"}, File: file, Default: def}, "d", "dp", FromFlag, FromDefault},
+		{"org-only file, use's project for that org", Resolver{File: Given{Org: "d"}, Default: def}, "d", "dp", FromFile, FromDefault},
+	}
+	for _, c := range cases {
+		c.r.API = f
+		org, orgFrom, project, projFrom := c.r.Named()
+		if org != c.org || project != c.project || orgFrom != c.orgFrom || projFrom != c.projFrom {
+			t.Errorf("%s: Named() = %s (%v), %s (%v)", c.name, org, orgFrom, project, projFrom)
+		}
+		gotOrg, gotProject, err := c.r.Both(ctx)
+		if err != nil || gotOrg != c.org || gotProject != c.project {
+			t.Errorf("%s: Both() = %s/%s, %v", c.name, gotOrg, gotProject, err)
+		}
+	}
+	if f.meCalls != 0 || len(f.projCalls) != 0 {
+		t.Error("asked Collector though something named them")
+	}
+	r := Resolver{API: f}
+	if org, from, project, pfrom := r.Named(); org != "" || from != FromNone || project != "" || pfrom != FromNone {
+		t.Errorf("nothing named: %s %v %s %v", org, from, project, pfrom)
+	}
+}
+
+func TestFindProjectFile(t *testing.T) {
+	root := t.TempDir()
+	deep := filepath.Join(root, "app", "web", "src")
+	if err := os.MkdirAll(deep, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if _, path, err := FindFile(deep); err != nil || path != "" {
+		t.Fatalf("none: %q, %v", path, err)
+	}
+	if err := WriteFile(filepath.Join(root, "app"), Given{Org: "acme", Project: "shop"}); err != nil {
+		t.Fatal(err)
+	}
+	g, path, err := FindFile(deep)
+	if err != nil || path != filepath.Join(root, "app", FileName) || g.Org != "acme" || g.Project != "shop" {
+		t.Fatalf("found %+v at %q, %v", g, path, err)
+	}
+	// The nearest wins.
+	if err := WriteFile(filepath.Join(root, "app", "web"), Given{Org: "acme"}); err != nil {
+		t.Fatal(err)
+	}
+	if g, _, _ := FindFile(deep); g.Org != "acme" || g.Project != "" {
+		t.Errorf("nearest: %+v", g)
+	}
+}
+
+func TestParseProjectFile(t *testing.T) {
+	g, err := parseFile("# Collector\norg = \"acme\"   # the org\n\nproject='my shop'\n")
+	if err != nil || g.Org != "acme" || g.Project != "my shop" {
+		t.Errorf("parsed %+v, %v", g, err)
+	}
+	for _, bad := range []string{
+		"org = acme\n",
+		"team = \"acme\"\n",
+		"org = \"acme\"\norg = \"other\"\n",
+		"project = \"shop\"\n",
+		"[collector]\norg = \"acme\"\n",
+		"org = \"\"\n",
+	} {
+		if _, err := parseFile(bad); err == nil {
+			t.Errorf("%q: no error", bad)
+		}
+	}
+	// What WriteFile writes reads back, quotes and all.
+	dir := t.TempDir()
+	want := Given{Org: `a"b`, Project: `c\d`}
+	if err := WriteFile(dir, want); err != nil {
+		t.Fatal(err)
+	}
+	if g, _, err := FindFile(dir); err != nil || g.Org != want.Org || g.Project != want.Project {
+		t.Errorf("round trip: %+v, %v", g, err)
 	}
 }

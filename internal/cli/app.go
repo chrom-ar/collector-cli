@@ -31,6 +31,11 @@ type app struct {
 	org     string // Once known, for error hints.
 	// noNotice: the command said whether there's a newer collector already.
 	noNotice bool
+
+	fileRead bool // The project file, once looked for.
+	file     target.Given
+	filePath string
+	fileErr  error
 }
 
 type globalFlags struct {
@@ -181,16 +186,40 @@ func (a *app) client() (*api.Client, *session, error) {
 }
 
 // resolver chooses the organization and project for c.
-func (a *app) resolver(c *api.Client) *target.Resolver {
+func (a *app) resolver(c *api.Client) (*target.Resolver, error) {
+	return a.resolverFor(c, c.Origin())
+}
+
+// resolverFor is resolver without a client, to say what's named: api may
+// be nil then, as long as nothing is asked.
+func (a *app) resolverFor(c target.API, url string) (*target.Resolver, error) {
+	file, _, err := a.projectFile()
+	if err != nil {
+		return nil, err
+	}
 	r := &target.Resolver{
 		API:  c,
 		Flag: target.Given{Org: a.flags.org, Project: a.flags.project},
 		Env:  target.Given{Org: a.env.Getenv("COLLECTOR_ORG"), Project: a.env.Getenv("COLLECTOR_PROJECT")},
+		File: file,
 	}
-	if d, ok := a.defaultFor(c.Origin()); ok {
+	if d, ok := a.defaultFor(url); ok {
 		r.Default = target.Given{Org: d.Org, Project: d.Project}
 	}
-	return r
+	return r, nil
+}
+
+// projectFile is the nearest project file above the working directory,
+// read once; path is "" with none.
+func (a *app) projectFile() (target.Given, string, error) {
+	if !a.fileRead {
+		a.file, a.filePath, a.fileErr = target.FindFile(a.env.Dir)
+		if a.fileErr != nil {
+			a.fileErr = usageError{a.fileErr}
+		}
+		a.fileRead = true
+	}
+	return a.file, a.filePath, a.fileErr
 }
 
 // defaultFor is what collector use chose for the Collector at url.
@@ -210,7 +239,10 @@ func (a *app) project(ctx context.Context, slug string) (*api.Client, string, st
 	if err != nil {
 		return nil, "", "", err
 	}
-	r := a.resolver(c)
+	r, err := a.resolver(c)
+	if err != nil {
+		return nil, "", "", err
+	}
 	org, err := r.Org(ctx)
 	if err != nil {
 		return nil, "", "", err

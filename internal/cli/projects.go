@@ -32,7 +32,11 @@ func newProjectsListCmd(a *app) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			org, err := a.resolver(cl).Org(ctx)
+			res, err := a.resolver(cl)
+			if err != nil {
+				return err
+			}
+			org, err := res.Org(ctx)
 			if err != nil {
 				return err
 			}
@@ -78,7 +82,11 @@ func newProjectsCreateCmd(a *app) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			org, err := a.resolver(cl).Org(ctx)
+			res, err := a.resolver(cl)
+			if err != nil {
+				return err
+			}
+			org, err := res.Org(ctx)
 			if err != nil {
 				return err
 			}
@@ -91,6 +99,7 @@ func newProjectsCreateCmd(a *app) *cobra.Command {
 				return a.printJSON(raw)
 			}
 			a.printProject(p)
+			a.progress("Setting it up with an AI coding agent: collector guide")
 			return nil
 		},
 	}

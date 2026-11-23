@@ -82,6 +82,7 @@ func newLoginCmd(a *app) *cobra.Command {
 				a.warn("COLLECTOR_TOKEN is set, and it wins over the token just stored")
 			}
 			a.nextSteps(me)
+			a.progress("For an AI coding agent: collector guide")
 			return nil
 		},
 	}
@@ -200,8 +201,12 @@ func newWhoamiCmd(a *app) *cobra.Command {
 				from = " from COLLECTOR_TOKEN"
 			}
 			a.out("%s", render.Safe(fmt.Sprintf("Token %q%s: %s%s", me.Token.Name, from, accessText(me.Token.Access), only)))
-			if d, ok := a.defaultFor(s.url); ok {
-				a.out("Default: %s", render.Safe(defaultText(d)))
+			text, err := a.namedText(s.url)
+			if err != nil {
+				return err
+			}
+			if text != "" {
+				a.out("Using: %s", text)
 			}
 			if len(me.Organizations) > 0 {
 				rows := make([][]string, 0, len(me.Organizations))

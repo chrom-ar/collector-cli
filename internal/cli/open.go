@@ -13,15 +13,17 @@ func newOpenCmd(a *app) *cobra.Command {
 	var noBrowser bool
 	f := &logsFlags{filters: map[string]*string{}}
 	c := &cobra.Command{
-		Use:   "open [issue <id|url> | logs [words...] | speed | settings]",
+		Use:   "open [issue <id|url> | logs [words...] | speed | settings | setup]",
 		Short: "Open the web app's page for a project, issue or log query",
 		Long: "Open a page of Collector's web app: the project's issues (no argument),\n" +
 			"one issue, the log explorer with the same filters as collector logs, the\n" +
-			"Speed tab, or the project's settings. The URL is printed too.",
+			"Speed tab, the project's settings, or its setup page (the DSN and how\n" +
+			"to install an SDK). The URL is printed too.",
 		Example: "  collector open\n" +
 			"  collector open issue 2C7ZffP787kc\n" +
 			"  collector open logs --request F3xAbCdEfGh\n" +
-			"  collector open settings --no-browser",
+			"  collector open settings --no-browser\n" +
+			"  collector open setup",
 		Args: argsBetween(0, 100),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
@@ -46,7 +48,7 @@ func newOpenCmd(a *app) *cobra.Command {
 				// /orgs/o/projects/p/issues/id → /o/o/p/p/issues/id
 				parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 				link = cl.Origin() + "/o/" + parts[1] + "/p/" + parts[3] + "/issues/" + parts[5]
-			case "", "logs", "speed", "settings":
+			case "", "logs", "speed", "settings", "setup":
 				if page != "logs" && len(args) > 0 {
 					return usageError{errors.New("unexpected arguments: " + strings.Join(args, " "))}
 				}
@@ -72,7 +74,7 @@ func newOpenCmd(a *app) *cobra.Command {
 					}
 				}
 			default:
-				return usageError{errors.New("unknown page " + quote(page) + ": use issue, logs, speed or settings")}
+				return usageError{errors.New("unknown page " + quote(page) + ": use issue, logs, speed, settings or setup")}
 			}
 			a.out("%s", link)
 			if a.env.StdoutIsTerminal && !noBrowser {
